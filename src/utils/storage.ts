@@ -105,6 +105,34 @@ export const storage = {
     return records
   },
 
+  batchUpsertFollowUps(studentIds: string[], data: Partial<FollowUpRecord>): FollowUpRecord[] {
+    const records = this.getFollowUps()
+    const now = new Date().toISOString()
+
+    studentIds.forEach(studentId => {
+      const existingIndex = records.findIndex(r => r.studentId === studentId)
+      if (existingIndex > -1) {
+        records[existingIndex] = {
+          ...records[existingIndex],
+          ...data,
+          updatedAt: now,
+        }
+      } else {
+        records.unshift({
+          id: generateId(),
+          studentId,
+          status: 'notified',
+          ...data,
+          createdAt: now,
+          updatedAt: now,
+        } as FollowUpRecord)
+      }
+    })
+
+    this.saveFollowUps(records)
+    return records
+  },
+
   deleteFollowUp(id: string): FollowUpRecord[] {
     const records = this.getFollowUps().filter(r => r.id !== id)
     this.saveFollowUps(records)

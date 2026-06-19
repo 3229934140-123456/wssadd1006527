@@ -22,6 +22,7 @@ interface AppContextType {
   addClassToSchool: (schoolName: string, className: string) => void
   getFollowUpByStudent: (studentId: string) => FollowUpRecord | undefined
   upsertFollowUp: (studentId: string, data: Partial<FollowUpRecord>) => void
+  batchUpsertFollowUps: (studentIds: string[], data: Partial<FollowUpRecord>) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -201,6 +202,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     console.log('[AppContext] FollowUp upserted for student:', studentId, data.status)
   }, [])
 
+  const batchUpsertFollowUps = useCallback((studentIds: string[], data: Partial<FollowUpRecord>) => {
+    const updated = storage.batchUpsertFollowUps(studentIds, data)
+    setFollowUps(updated)
+    console.log('[AppContext] FollowUp batch upserted, count:', studentIds.length, data.status)
+  }, [])
+
   const batchUpdateToothRecords = useCallback((
     studentId: string,
     toothIds: string[],
@@ -267,6 +274,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addClassToSchool,
         getFollowUpByStudent,
         upsertFollowUp,
+        batchUpsertFollowUps,
       }}
     >
       {children}

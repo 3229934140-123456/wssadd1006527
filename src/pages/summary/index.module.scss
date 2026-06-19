@@ -728,3 +728,147 @@
     background: $color-bg-hover;
   }
 }
+
+/* 批量操作样式 */
+.batchActionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $page-padding;
+  background: $color-bg-card;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.batchActionLeft {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.batchModeBtn {
+  height: 56rpx;
+  padding: 0 $spacing-lg;
+  border-radius: $radius-round;
+  background: $color-bg-page;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-base;
+
+  &.batchModeActive {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.selectAllBtn {
+  height: 56rpx;
+  padding: 0 $spacing-md;
+  border-radius: $radius-round;
+  background: rgba(22, 119, 255, 0.1);
+  font-size: $font-size-sm;
+  color: $color-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.batchCount {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.checkbox {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: $radius-round;
+  border: 3rpx solid $color-border;
+  background: $color-bg-card;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-sm;
+  flex-shrink: 0;
+  transition: all $transition-base;
+
+  &.checked {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    border-color: $color-primary;
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+.checkmark {
+  color: $color-text-white;
+  font-size: 28rpx;
+  font-weight: $font-weight-bold;
+}
+
+.followUpItem {
+  &.selected {
+    background: rgba(22, 119, 255, 0.05);
+  }
+}
+
+.batchFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: $spacing-md;
+  z-index: 100;
+}
+
+.batchFooterBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.batchNotifyBtn {
+  background: rgba(24, 144, 255, 0.1);
+  color: #1890ff;
+  border: 2rpx solid rgba(24, 144, 255, 0.3);
+}
+
+.batchAppointBtn {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.modalSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+}

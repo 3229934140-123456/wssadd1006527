@@ -665,4 +665,143 @@
 .doctorStat {
   font-size: $font-size-sm;
   color: $color-text-secondary;
+
+  &.followupStat {
+    color: $color-status-suggest;
+  }
+}
+
+/* 班级交接清单样式 */
+.classHandoverItem {
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+  overflow: hidden;
+}
+
+.classHandoverHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  transition: background $transition-base;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.classHandoverTitle {
+  flex: 1;
+  min-width: 0;
+}
+
+.classHandoverName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+  display: block;
+}
+
+.classHandoverCount {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  display: block;
+}
+
+.expandIcon {
+  font-size: 32rpx;
+  color: $color-text-tertiary;
+  transition: transform $transition-base;
+
+  &.expanded {
+    transform: rotate(180deg);
+  }
+}
+
+.followupStatusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  padding: 0 $spacing-md $spacing-md;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  height: 48rpx;
+  padding: 0 $spacing-sm;
+  border-radius: $radius-xs;
+  font-size: 22rpx;
+  font-weight: $font-weight-medium;
+
+  &.pending {
+    background: rgba(134, 144, 156, 0.1);
+    color: $color-text-tertiary;
+  }
+
+  &.notified {
+    background: rgba(24, 144, 255, 0.1);
+    color: #1890ff;
+  }
+
+  &.appointed {
+    background: rgba(82, 196, 26, 0.1);
+    color: #52c41a;
+  }
+
+  &.declined {
+    background: rgba(255, 77, 79, 0.1);
+    color: #ff4d4f;
+  }
+
+  &.transferred {
+    background: rgba(250, 173, 20, 0.1);
+    color: #faad14;
+  }
+}
+
+.classHandoverDetail {
+  padding: 0 $spacing-md $spacing-md;
+  border-top: 1rpx solid $color-divider;
+  padding-top: $spacing-md;
+}
+
+.studentGroup {
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.studentGroupTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+  display: block;
+}
+
+.studentRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-xs;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.studentName {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.studentPhone {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
 }

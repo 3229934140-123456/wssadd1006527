@@ -12,7 +12,7 @@ type FollowUpFilter = FollowUpStatus | 'all'
 
 const SummaryPage: React.FC = () => {
   const { students, schools, currentSchool, currentClass, setCurrentSchool, setCurrentClass,
-    refreshData, loading, getFollowUpByStudent, upsertFollowUp } = useApp()
+    refreshData, loading, getFollowUpByStudent, upsertFollowUp, batchUpsertFollowUps } = useApp()
 
   const [activeTab, setActiveTab] = useState<'completion' | 'followup'>('completion')
   const [expandedClasses, setExpandedClasses] = useState<string[]>([])
@@ -20,10 +20,17 @@ const SummaryPage: React.FC = () => {
   const [showClassPicker, setShowClassPicker] = useState(false)
   const [followUpFilter, setFollowUpFilter] = useState<FollowUpFilter>('all')
   const [showFollowUpModal, setShowFollowUpModal] = useState(false)
+  const [showBatchModal, setShowBatchModal] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
+  const [batchMode, setBatchMode] = useState(false)
   const [followUpForm, setFollowUpForm] = useState({
     status: 'pending' as FollowUpStatus,
     remark: '',
+    appointmentTime: '',
+  })
+  const [batchForm, setBatchForm] = useState({
+    status: 'notified' as FollowUpStatus,
     appointmentTime: '',
   })
 
@@ -178,6 +185,47 @@ const SummaryPage: React.FC = () => {
     Taro.showToast({ title: '已保存', icon: 'success' })
   }
 
+  const toggleStudentSelect = (studentId: string, e: any) => {
+    e.stopPropagation()
+    setSelectedStudentIds(prev =>
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    )
+  }
+
+  const selectAllStudents = () => {
+    if (selectedStudentIds.length === followUpList.length) {
+      setSelectedStudentIds([])
+    } else {
+      setSelectedStudentIds(followUpList.map(item => item.student.id))
+    }
+  }
+
+  const openBatchModal = () => {
+    if (selectedStudentIds.length === 0) {
+      Taro.showToast({ title: '请先选择学生', icon: 'none' })
+      return
+    }
+    setBatchForm({
+      status: 'notified',
+      appointmentTime: '',
+    })
+    setShowBatchModal(true)
+  }
+
+  const handleBatchSave = () => {
+    if (selectedStudentIds.length === 0) return
+    batchUpsertFollowUps(selectedStudentIds, {
+      status: batchForm.status,
+      appointmentTime: batchForm.appointmentTime || undefined,
+    })
+    setShowBatchModal(false)
+    setSelectedStudentIds([])
+    setBatchMode(false)
+    Taro.showToast({ title: `已批量标记${selectedStudentIds.length}人`, icon: 'success' })
+  }
+
   const getStudentStatusTag = (student: Student) => {
     const status = getStudentStatus(student)
     if (status === 'done') return <StatusTag status="done" size="small" />
@@ -275,20 +323,42 @@ const SummaryPage: React.FC = () => {
         </View>
 
         {activeTab === 'followup' && (
-          <ScrollView scrollX className={styles.followUpFilterBar}>
-            {followUpFilterOptions.map(opt => (
-              <View
-                key={opt.value}
-                className={classnames(styles.followUpFilterBtn, followUpFilter === opt.value && styles.filterActive)}
-                onClick={() => setFollowUpFilter(opt.value)}
-              >
-                <Text>{opt.label}</Text>
+          <>
+            <ScrollView scrollX className={styles.followUpFilterBar}>
+              {followUpFilterOptions.map(opt => (
+                <View
+                  key={opt.value}
+                  className={classnames(styles.followUpFilterBtn, followUpFilter === opt.value && styles.filterActive)}
+                  onClick={() => setFollowUpFilter(opt.value)}
+                >
+                  <Text>{opt.label}</Text>
+                </View>
+              ))}
+            </ScrollView>
+            <View className={styles.batchActionBar}>
+              <View className={styles.batchActionLeft}>
+                <View
+                  className={classnames(styles.batchModeBtn, batchMode && styles.batchModeActive)}
+                  onClick={() => { setBatchMode(!batchMode); setSelectedStudentIds([]); }}
+                >
+                  <Text>{batchMode ? '取消批量' : '批量操作'}</Text>
+                </View>
+                {batchMode && (
+                  <View className={styles.selectAllBtn} onClick={selectAllStudents}>
+                    <Text>{selectedStudentIds.length === followUpList.length ? '取消全选' : '全选'}</Text>
+                  </View>
+                )}
               </View>
-            ))}
-          </ScrollView>
+              {batchMode && selectedStudentIds.length > 0 && (
+                <View className={styles.batchCount}>
+                  <Text>已选 {selectedStudentIds.length} 人</Text>
+                </View>
+              )}
+            </View>
+          </>
         )}
 
-        <ScrollView scrollY style={{ height: activeTab === 'followup' ? 'calc(100vh - 860rpx)' : 'calc(100vh - 780rpx)' }}>
+        <ScrollView scrollY style={{ height: activeTab === 'followup' ? (batchMode ? 'calc(100vh - 1040rpx)' : 'calc(100vh - 940rpx)') : 'calc(100vh - 780rpx)' }}>
           {activeTab === 'completion' ? (
             <View className={styles.listSection}>
               {classSummaries.length === 0 ? (
@@ -354,13 +424,21 @@ const SummaryPage: React.FC = () => {
                 </View>
               ) : (
                 followUpList.map((item, index) => (
-                  <View key={item.student.id} className={styles.followUpItem}>
+                  <View key={item.student.id} className={classnames(styles.followUpItem, selectedStudentIds.includes(item.student.id) && styles.selected)}>
+                    {batchMode && (
+                      <View
+                        className={classnames(styles.checkbox, selectedStudentIds.includes(item.student.id) && styles.checked)}
+                        onClick={(e) => toggleStudentSelect(item.student.id, e)}
+                      >
+                        {selectedStudentIds.includes(item.student.id) && <Text className={styles.checkmark}>✓</Text>}
+                      </View>
+                    )}
                     <View className={styles.followUpAvatar}>
                       <Text className={styles.followUpAvatarText}>{index + 1}</Text>
                     </View>
                     <View
                       className={styles.followUpInfo}
-                      onClick={() => Taro.navigateTo({ url: `/pages/student-detail/index?id=${item.student.id}` })}
+                      onClick={() => !batchMode && Taro.navigateTo({ url: `/pages/student-detail/index?id=${item.student.id}` })}
                     >
                       <View className={styles.followUpName}>
                         <Text>{item.student.name}</Text>
@@ -390,26 +468,45 @@ const SummaryPage: React.FC = () => {
                         </View>
                       )}
                     </View>
-                    <View style={{ display: 'flex', flexDirection: 'column', gap: '8rpx', alignItems: 'flex-end' }}>
-                      <View
-                        className={styles.followUpPhone}
-                        onClick={() => handleCallPhone(item.student.guardianPhone)}
-                      >
-                        <Text className={styles.followUpPhoneText}>📞</Text>
+                    {!batchMode && (
+                      <View style={{ display: 'flex', flexDirection: 'column', gap: '8rpx', alignItems: 'flex-end' }}>
+                        <View
+                          className={styles.followUpPhone}
+                          onClick={() => handleCallPhone(item.student.guardianPhone)}
+                        >
+                          <Text className={styles.followUpPhoneText}>📞</Text>
+                        </View>
+                        <View
+                          className={styles.followUpBtn}
+                          onClick={(e) => { e.stopPropagation(); openFollowUpModal(item.student.id) }}
+                        >
+                          <Text className={styles.followUpBtnText}>回访</Text>
+                        </View>
                       </View>
-                      <View
-                        className={styles.followUpBtn}
-                        onClick={(e) => { e.stopPropagation(); openFollowUpModal(item.student.id) }}
-                      >
-                        <Text className={styles.followUpBtnText}>回访</Text>
-                      </View>
-                    </View>
+                    )}
                   </View>
                 ))
               )}
             </View>
           )}
         </ScrollView>
+
+        {batchMode && selectedStudentIds.length > 0 && (
+          <View className={styles.batchFooter}>
+            <Button
+              className={classnames(styles.batchFooterBtn, styles.batchNotifyBtn)}
+              onClick={() => { setBatchForm({ ...batchForm, status: 'notified' }); setShowBatchModal(true); }}
+            >
+              <Text>批量标记已通知</Text>
+            </Button>
+            <Button
+              className={classnames(styles.batchFooterBtn, styles.batchAppointBtn)}
+              onClick={() => { setBatchForm({ ...batchForm, status: 'appointed' }); setShowBatchModal(true); }}
+            >
+              <Text>批量标记已预约</Text>
+            </Button>
+          </View>
+        )}
       </View>
 
       {showSchoolPicker && (
@@ -524,6 +621,52 @@ const SummaryPage: React.FC = () => {
               </Button>
               <Button className={classnames(styles.modalBtn, styles.modalConfirm)} onClick={handleFollowUpSave}>
                 保存
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showBatchModal && (
+        <View className={styles.modalOverlay} onClick={() => setShowBatchModal(false)}>
+          <View className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>批量回访登记</Text>
+              <Text className={styles.modalSubtitle}>已选择 {selectedStudentIds.length} 名学生</Text>
+            </View>
+            <View className={styles.modalBody}>
+              <View className={styles.formGroup}>
+                <Text className={styles.formLabel}>回访状态</Text>
+                <View className={styles.statusOptionGrid}>
+                  {(['notified', 'appointed'] as FollowUpStatus[]).map(status => (
+                    <View
+                      key={status}
+                      className={classnames(styles.statusOption, batchForm.status === status && styles.statusOptionActive, styles[status])}
+                      onClick={() => setBatchForm({ ...batchForm, status })}
+                    >
+                      <Text>{FOLLOWUP_LABEL[status]}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              {batchForm.status === 'appointed' && (
+                <View className={styles.formGroup}>
+                  <Text className={styles.formLabel}>预约时间（选填）</Text>
+                  <Input
+                    className={styles.formInput}
+                    placeholder="例：2026-06-25 上午"
+                    value={batchForm.appointmentTime}
+                    onInput={(e) => setBatchForm({ ...batchForm, appointmentTime: e.detail.value })}
+                  />
+                </View>
+              )}
+            </View>
+            <View className={styles.modalActions}>
+              <Button className={classnames(styles.modalBtn, styles.modalCancel)} onClick={() => setShowBatchModal(false)}>
+                取消
+              </Button>
+              <Button className={classnames(styles.modalBtn, styles.modalConfirm)} onClick={handleBatchSave}>
+                确认批量标记
               </Button>
             </View>
           </View>

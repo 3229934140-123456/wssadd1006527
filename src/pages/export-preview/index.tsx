@@ -8,6 +8,7 @@ import styles from './index.module.scss'
 
 type ReportVersion = 'school' | 'internal'
 type StudentStatus = 'done' | 'followup' | 'unchecked'
+type ViewMode = 'overview' | 'classList' | 'text'
 
 interface ClassSummary {
   className: string
@@ -19,6 +20,11 @@ interface ClassSummary {
   doneCount: number
   delayCount: number
   percent: number
+  pendingCount: number
+  notifiedCount: number
+  appointedCount: number
+  declinedCount: number
+  transferredCount: number
   students: Student[]
 }
 
@@ -31,15 +37,23 @@ interface SchoolSummary {
   classes: ClassSummary[]
 }
 
+interface DoctorSummary {
+  doctor: string
+  studentCount: number
+  doneTeeth: number
+  followupCount: number
+}
+
 const ExportPreviewPage: React.FC = () => {
   const router = useRouter()
   const { students, getFollowUpByStudent } = useApp()
 
-  const [viewMode, setViewMode] = useState<'visual' | 'text'>('visual')
+  const [viewMode, setViewMode] = useState<ViewMode>('classList')
   const [reportVersion, setReportVersion] = useState<ReportVersion>('school')
   const [doctorFilter, setDoctorFilter] = useState('')
   const [followUpFilter, setFollowUpFilter] = useState<FollowUpStatus | 'all'>('all')
   const [reportContent, setReportContent] = useState('')
+  const [expandedClasses, setExpandedClasses] = useState<string[]>([])
 
   const filterSchool = router.params.school || ''
   const filterClass = router.params.class || ''
@@ -147,15 +161,35 @@ const ExportPreviewPage: React.FC = () => {
         let suggestCount = 0
         let doneCount = 0
         let delayCount = 0
+        let pendingCount = 0
+        let notifiedCount = 0
+        let appointedCount = 0
+        let declinedCount = 0
+        let transferredCount = 0
+
         classStudents.forEach(s => {
           s.toothRecords.forEach(r => {
             if (r.status === 'suggest') suggestCount++
             else if (r.status === 'done') doneCount++
             else if (r.status === 'delay') delayCount++
           })
+          const fu = getFollowUpByStudent(s.id)
+          if (getStudentStatus(s) === 'followup') {
+            const status = fu?.status || 'pending'
+            if (status === 'pending') pendingCount++
+            else if (status === 'notified') notifiedCount++
+            else if (status === 'appointed') appointedCount++
+            else if (status === 'declined') declinedCount++
+            else if (status === 'transferred') transferredCount++
+          }
         })
 
-        classes.push({ className, total, completed, followup, unchecked, suggestCount, doneCount, delayCount, percent, students: classStudents })
+        classes.push({ 
+          className, total, completed, followup, unchecked, 
+          suggestCount, doneCount, delayCount, percent,
+          pendingCount, notifiedCount, appointedCount, declinedCount, transferredCount,
+          students: classStudents 
+        })
         schoolTotal += total
         schoolCompleted += completed
         schoolFollowup += followup
@@ -167,7 +201,42 @@ const ExportPreviewPage: React.FC = () => {
     })
 
     return summaries.sort((a, b) => a.schoolName.localeCompare(b.schoolName))
-  }, [filteredStudents])
+  }, [filteredStudents, getFollowUpByStudent])
+
+  const doctorSummaries = useMemo((): DoctorSummary[] => {
+    const doctorMap = new Map<string, { students: Set<string>; doneTeeth: number; followupStudents: Set<string> }>()
+    
+    allDoctors.forEach(doctor => {
+      if (doctorFilter && doctor !== doctorFilter) return
+      doctorMap.set(doctor, { students: new Set(), doneTeeth: 0, followupStudents: new Set() })
+    })
+
+    filteredStudents.forEach(student => {
+      const studentStatus = getStudentStatus(student)
+      student.toothRecords.forEach(record => {
+        if (!record.doctorSignature) return
+        if (doctorFilter && record.doctorSignature !== doctorFilter) return
+        
+        const doctorData = doctorMap.get(record.doctorSignature)
+        if (!doctorData) return
+        
+        doctorData.students.add(student.id)
+        if (record.status === 'done') {
+          doctorData.doneTeeth++
+        }
+        if (studentStatus === 'followup') {
+          doctorData.followupStudents.add(student.id)
+        }
+      })
+    })
+
+    return Array.from(doctorMap.entries()).map(([doctor, data]) => ({
+      doctor,
+      studentCount: data.students.size,
+      doneTeeth: data.doneTeeth,
+      followupCount: data.followupStudents.size,
+    })).sort((a, b) => a.doctor.localeCompare(b.doctor))
+  }, [filteredStudents, allDoctors, doctorFilter])
 
   const formatDate = (isoString: string): string => {
     const date = new Date(isoString)
@@ -176,6 +245,12 @@ const ExportPreviewPage: React.FC = () => {
     const hours = String(date.getHours()).padStart(2, '0')
     const minutes = String(date.getMinutes()).padStart(2, '0')
     return `${month}-${day} ${hours}:${minutes}`
+  }
+
+  const toggleClassExpand = (classKey: string) => {
+    setExpandedClasses(prev =>
+      prev.includes(classKey) ? prev.filter(c => c !== classKey) : [...prev, classKey]
+    )
   }
 
   const generateExportReport = (): string => {
@@ -203,78 +278,43 @@ const ExportPreviewPage: React.FC = () => {
       report += `\n`
     }
 
-    report += `=== 各校/各班完成情况 ===\n`
+    report += `=== 班级交接清单 ===\n`
     schoolSummaries.forEach(school => {
-      report += `【${school.schoolName}】 已完成${school.completed}/${school.total}人（需复诊${school.followup}人、未检查${school.unchecked}人）\n`
+      report += `【${school.schoolName}】\n`
       school.classes.forEach(cls => {
-        report += `  ${cls.className}：已完成${cls.completed}/${cls.total}人（${cls.percent}%），需复诊${cls.followup}人、未检查${cls.unchecked}人\n`
+        report += `\n--- ${cls.className} ---\n`
+        report += `总人数：${cls.total}人 | 已完成：${cls.completed}人 | 未检查：${cls.unchecked}人 | 需复诊：${cls.followup}人\n`
+        report += `通知状态：待通知${cls.pendingCount}人 · 已通知${cls.notifiedCount}人 · 已预约${cls.appointedCount}人 · 已拒绝${cls.declinedCount}人 · 已转诊${cls.transferredCount}人\n`
+        
+        const uncheckedStudents = cls.students.filter(s => getStudentStatus(s) === 'unchecked')
+        const followupStudents = cls.students.filter(s => getStudentStatus(s) === 'followup')
+        
+        if (uncheckedStudents.length > 0) {
+          report += `\n未检查名单（${uncheckedStudents.length}人）：\n`
+          uncheckedStudents.forEach(s => {
+            report += `  ${s.name} | ${s.guardianPhone}\n`
+          })
+        }
+        
+        if (followupStudents.length > 0) {
+          report += `\n需复诊名单（${followupStudents.length}人）：\n`
+          followupStudents.forEach(s => {
+            const fu = getFollowUpByStudent(s.id)
+            const fuStatus = fu ? FOLLOWUP_LABEL[fu.status] : '待通知'
+            report += `  ${s.name} | ${s.guardianPhone} | ${fuStatus}`
+            if (fu?.appointmentTime) report += ` | 预约：${fu.appointmentTime}`
+            report += `\n`
+          })
+        }
       })
       report += `\n`
     })
 
-    report += `=== 各班未检查名单 ===\n`
-    let hasUnchecked = false
-    schoolSummaries.forEach(school => {
-      school.classes.forEach(cls => {
-        const uncheckedStudents = cls.students.filter(s => getStudentStatus(s) === 'unchecked')
-        if (uncheckedStudents.length > 0) {
-          hasUnchecked = true
-          report += `${school.schoolName} ${cls.className}（${uncheckedStudents.length}人）：\n`
-          uncheckedStudents.forEach(s => {
-            report += `  ${s.name}（家长电话：${s.guardianPhone}）\n`
-          })
-        }
-      })
-    })
-    if (!hasUnchecked) report += `（全部已检查）\n`
-    report += `\n`
-
-    report += `=== 各班需复诊名单 ===\n`
-    let hasFollowup = false
-    schoolSummaries.forEach(school => {
-      school.classes.forEach(cls => {
-        const followupStudents = cls.students.filter(s => getStudentStatus(s) === 'followup')
-        if (followupStudents.length > 0) {
-          hasFollowup = true
-          report += `${school.schoolName} ${cls.className}（${followupStudents.length}人）：\n`
-          followupStudents.forEach(student => {
-            const suggestTeeth = student.toothRecords.filter(r => r.status === 'suggest').map(r => r.toothName)
-            const delayTeeth = student.toothRecords.filter(r => r.status === 'delay').map(r => r.toothName)
-            const fu = getFollowUpByStudent(student.id)
-            report += `  ${student.name}（家长电话：${student.guardianPhone}）\n`
-            if (suggestTeeth.length > 0) report += `    建议封闭：${suggestTeeth.join('、')}\n`
-            if (delayTeeth.length > 0) report += `    暂缓处理：${delayTeeth.join('、')}\n`
-            if (fu) {
-              report += `    回访状态：${FOLLOWUP_LABEL[fu.status]}`
-              if (fu.appointmentTime) report += `，预约：${fu.appointmentTime}`
-              report += `\n`
-              if (fu.remark) report += `    备注：${fu.remark}\n`
-            } else {
-              report += `    回访状态：待通知\n`
-            }
-          })
-        }
-      })
-    })
-    if (!hasFollowup) report += `（无需复诊学生）\n`
-    report += `\n`
-
     if (reportVersion === 'internal') {
-      if (allDoctors.length > 0) {
-        report += `=== 医生工作量统计 ===\n`
-        const doctorScopeStudents = doctorFilter
-          ? filteredStudents
-          : students.filter(s => filterSchool ? s.school === filterSchool : true).filter(s => filterClass ? s.className === filterClass : true)
-
-        allDoctors.forEach(doctor => {
-          if (doctorFilter && doctor !== doctorFilter) return
-          const doctorStudents = doctorScopeStudents.filter(s =>
-            s.toothRecords.some(r => r.doctorSignature === doctor)
-          )
-          const doctorDoneCount = doctorScopeStudents.reduce((sum, s) =>
-            sum + s.toothRecords.filter(r => r.doctorSignature === doctor && r.status === 'done').length, 0
-          )
-          report += `${doctor}：检查${doctorStudents.length}人，已封闭${doctorDoneCount}颗牙\n`
+      if (doctorSummaries.length > 0) {
+        report += `=== 医生交接小结 ===\n`
+        doctorSummaries.forEach(ds => {
+          report += `${ds.doctor}：处理${ds.studentCount}人，已封闭${ds.doneTeeth}颗牙，需跟进${ds.followupCount}人\n`
         })
         report += `\n`
       }
@@ -301,7 +341,7 @@ const ExportPreviewPage: React.FC = () => {
   useEffect(() => {
     const report = generateExportReport()
     setReportContent(report)
-  }, [reportVersion, doctorFilter, followUpFilter])
+  }, [reportVersion, doctorFilter, followUpFilter, viewMode])
 
   const handleCopy = async () => {
     try {
@@ -350,14 +390,14 @@ const ExportPreviewPage: React.FC = () => {
           <View className={styles.versionToggle}>
             <View
               className={classnames(styles.versionBtn, reportVersion === 'school' && styles.active)}
-              onClick={() => setReportVersion('school')}
+              onClick={() => { setReportVersion('school'); setViewMode('classList'); }}
             >
               <Text className={styles.versionIcon}>🏫</Text>
               <Text className={styles.versionText}>学校负责人版</Text>
             </View>
             <View
               className={classnames(styles.versionBtn, reportVersion === 'internal' && styles.active)}
-              onClick={() => setReportVersion('internal')}
+              onClick={() => { setReportVersion('internal'); setViewMode('overview'); }}
             >
               <Text className={styles.versionIcon}>📋</Text>
               <Text className={styles.versionText}>团队内部版</Text>
@@ -409,22 +449,48 @@ const ExportPreviewPage: React.FC = () => {
 
         <View className={styles.section}>
           <View className={styles.viewToggle}>
-            <Button
-              className={classnames(styles.toggleBtn, viewMode === 'visual' && styles.active)}
-              onClick={() => setViewMode('visual')}
-            >
-              可视化视图
-            </Button>
-            <Button
-              className={classnames(styles.toggleBtn, viewMode === 'text' && styles.active)}
-              onClick={() => setViewMode('text')}
-            >
-              文本报告
-            </Button>
+            {reportVersion === 'school' && (
+              <>
+                <Button
+                  className={classnames(styles.toggleBtn, viewMode === 'classList' && styles.active)}
+                  onClick={() => setViewMode('classList')}
+                >
+                  班级交接清单
+                </Button>
+                <Button
+                  className={classnames(styles.toggleBtn, viewMode === 'text' && styles.active)}
+                  onClick={() => setViewMode('text')}
+                >
+                  文本报告
+                </Button>
+              </>
+            )}
+            {reportVersion === 'internal' && (
+              <>
+                <Button
+                  className={classnames(styles.toggleBtn, viewMode === 'overview' && styles.active)}
+                  onClick={() => setViewMode('overview')}
+                >
+                  可视化视图
+                </Button>
+                <Button
+                  className={classnames(styles.toggleBtn, viewMode === 'classList' && styles.active)}
+                  onClick={() => setViewMode('classList')}
+                >
+                  班级交接清单
+                </Button>
+                <Button
+                  className={classnames(styles.toggleBtn, viewMode === 'text' && styles.active)}
+                  onClick={() => setViewMode('text')}
+                >
+                  文本报告
+                </Button>
+              </>
+            )}
           </View>
         </View>
 
-        {viewMode === 'visual' ? (
+        {viewMode === 'overview' ? (
           <>
             <View className={styles.section}>
               <View className={styles.sectionTitle}>
@@ -450,22 +516,20 @@ const ExportPreviewPage: React.FC = () => {
                     <Text className={styles.overviewLabel}>未检查</Text>
                   </View>
                 </View>
-                {reportVersion === 'internal' && (
-                  <View className={styles.overviewRow}>
-                    <View className={classnames(styles.overviewItem, styles.suggest)}>
-                      <Text className={styles.overviewValue}>{stats.suggestCount}</Text>
-                      <Text className={styles.overviewLabel}>建议封闭(颗)</Text>
-                    </View>
-                    <View className={classnames(styles.overviewItem, styles.done)}>
-                      <Text className={styles.overviewValue}>{stats.doneCount}</Text>
-                      <Text className={styles.overviewLabel}>已封闭(颗)</Text>
-                    </View>
-                    <View className={classnames(styles.overviewItem, styles.delay)}>
-                      <Text className={styles.overviewValue}>{stats.delayCount}</Text>
-                      <Text className={styles.overviewLabel}>暂缓处理(颗)</Text>
-                    </View>
+                <View className={styles.overviewRow}>
+                  <View className={classnames(styles.overviewItem, styles.suggest)}>
+                    <Text className={styles.overviewValue}>{stats.suggestCount}</Text>
+                    <Text className={styles.overviewLabel}>建议封闭(颗)</Text>
                   </View>
-                )}
+                  <View className={classnames(styles.overviewItem, styles.done)}>
+                    <Text className={styles.overviewValue}>{stats.doneCount}</Text>
+                    <Text className={styles.overviewLabel}>已封闭(颗)</Text>
+                  </View>
+                  <View className={classnames(styles.overviewItem, styles.delay)}>
+                    <Text className={styles.overviewValue}>{stats.delayCount}</Text>
+                    <Text className={styles.overviewLabel}>暂缓处理(颗)</Text>
+                  </View>
+                </View>
               </View>
             </View>
 
@@ -508,45 +572,6 @@ const ExportPreviewPage: React.FC = () => {
                             <Text>未检查{cls.unchecked}</Text>
                           </View>
                         </View>
-
-                        {cls.unchecked > 0 && (
-                          <View className={styles.classStudentList}>
-                            <Text className={styles.classStudentListTitle}>未检查（{cls.unchecked}人）：</Text>
-                            {cls.students.filter(s => getStudentStatus(s) === 'unchecked').map(s => (
-                              <View key={s.id} className={styles.classStudentItem} onClick={() => handleStudentClick(s.id)}>
-                                <Text>{s.name}</Text>
-                                <Text className={styles.classStudentPhone}>{s.guardianPhone}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        )}
-
-                        {cls.followup > 0 && (
-                          <View className={styles.classStudentList}>
-                            <Text className={styles.classStudentListTitle}>需复诊（{cls.followup}人）：</Text>
-                            {cls.students.filter(s => getStudentStatus(s) === 'followup').map(s => {
-                              const fu = getFollowUpByStudent(s.id)
-                              const suggestTeeth = s.toothRecords.filter(r => r.status === 'suggest').map(r => r.toothName)
-                              return (
-                                <View key={s.id} className={styles.classStudentItem} onClick={() => handleStudentClick(s.id)}>
-                                  <View style={{ display: 'flex', flexDirection: 'column', gap: '4rpx' }}>
-                                    <Text>{s.name}</Text>
-                                    {suggestTeeth.length > 0 && (
-                                      <Text className={styles.classStudentTeeth}>
-                                        建议：{suggestTeeth.join('、')}
-                                      </Text>
-                                    )}
-                                  </View>
-                                  {fu && (
-                                    <View className={classnames(styles.followUpBadge, styles[fu.status])}>
-                                      <Text>{FOLLOWUP_LABEL[fu.status]}</Text>
-                                    </View>
-                                  )}
-                                </View>
-                              )
-                            })}
-                          </View>
-                        )}
                       </View>
                     ))}
                   </View>
@@ -554,39 +579,123 @@ const ExportPreviewPage: React.FC = () => {
               ))}
             </View>
 
-            {reportVersion === 'internal' && allDoctors.length > 0 && (
+            {allDoctors.length > 0 && (
               <View className={styles.section}>
                 <View className={styles.sectionTitle}>
                   <Text className={styles.sectionTitleIcon}>👨‍⚕️</Text>
-                  <Text>医生工作量</Text>
+                  <Text>医生交接小结</Text>
                 </View>
                 <View className={styles.overviewCard}>
-                  {allDoctors.map(doctor => {
-                    if (doctorFilter && doctor !== doctorFilter) return null
-                    const doctorStudents = filteredStudents.filter(s =>
-                      s.toothRecords.some(r => r.doctorSignature === doctor)
-                    )
-                    const doctorDoneCount = filteredStudents.reduce((sum, s) =>
-                      sum + s.toothRecords.filter(r => r.doctorSignature === doctor && r.status === 'done').length, 0
-                    )
+                  {doctorSummaries.map(ds => (
+                    <View key={ds.doctor} className={styles.doctorRow}>
+                      <Text className={styles.doctorName}>{ds.doctor}</Text>
+                      <View className={styles.doctorStats}>
+                        <Text className={styles.doctorStat}>
+                          处理 {ds.studentCount} 人
+                        </Text>
+                        <Text className={styles.doctorStat}>
+                          已封 {ds.doneTeeth} 颗
+                        </Text>
+                        <Text className={classnames(styles.doctorStat, styles.followupStat)}>
+                          需跟进 {ds.followupCount} 人
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
+        ) : viewMode === 'classList' ? (
+          <View className={styles.section}>
+            <View className={styles.sectionTitle}>
+              <Text className={styles.sectionTitleIcon}>📋</Text>
+              <Text>班级交接清单</Text>
+            </View>
+            {schoolSummaries.map(school => (
+              <View key={school.schoolName} className={styles.schoolSection}>
+                <View className={styles.schoolHeader}>
+                  <Text className={styles.schoolName}>{school.schoolName}</Text>
+                  <Text className={styles.schoolStats}>
+                    共{school.total}人 · 需复诊{school.followup}人
+                  </Text>
+                </View>
+                <View className={styles.classList}>
+                  {school.classes.map(cls => {
+                    const classKey = `${school.schoolName}-${cls.className}`
+                    const isExpanded = expandedClasses.includes(classKey)
                     return (
-                      <View key={doctor} className={styles.doctorRow}>
-                        <Text className={styles.doctorName}>{doctor}</Text>
-                        <View className={styles.doctorStats}>
-                          <Text className={styles.doctorStat}>
-                            检查 {doctorStudents.length} 人
-                          </Text>
-                          <Text className={styles.doctorStat}>
-                            已封闭 {doctorDoneCount} 颗
-                          </Text>
+                      <View key={cls.className} className={styles.classHandoverItem}>
+                        <View className={styles.classHandoverHeader} onClick={() => toggleClassExpand(classKey)}>
+                          <View className={styles.classHandoverTitle}>
+                            <Text className={styles.classHandoverName}>{cls.className}</Text>
+                            <Text className={styles.classHandoverCount}>
+                              {cls.total}人 · 未检查{cls.unchecked} · 需复诊{cls.followup}
+                            </Text>
+                          </View>
+                          <Text className={classnames(styles.expandIcon, isExpanded && styles.expanded)}>▾</Text>
                         </View>
+                        
+                        <View className={styles.followupStatusRow}>
+                          <View className={classnames(styles.statusChip, styles.pending)}>
+                            <Text>待通知 {cls.pendingCount}</Text>
+                          </View>
+                          <View className={classnames(styles.statusChip, styles.notified)}>
+                            <Text>已通知 {cls.notifiedCount}</Text>
+                          </View>
+                          <View className={classnames(styles.statusChip, styles.appointed)}>
+                            <Text>已预约 {cls.appointedCount}</Text>
+                          </View>
+                          <View className={classnames(styles.statusChip, styles.declined)}>
+                            <Text>已拒绝 {cls.declinedCount}</Text>
+                          </View>
+                          <View className={classnames(styles.statusChip, styles.transferred)}>
+                            <Text>已转诊 {cls.transferredCount}</Text>
+                          </View>
+                        </View>
+
+                        {isExpanded && (
+                          <View className={styles.classHandoverDetail}>
+                            {cls.unchecked > 0 && (
+                              <View className={styles.studentGroup}>
+                                <Text className={styles.studentGroupTitle}>未检查（{cls.unchecked}人）</Text>
+                                {cls.students.filter(s => getStudentStatus(s) === 'unchecked').map(s => (
+                                  <View key={s.id} className={styles.studentRow} onClick={() => handleStudentClick(s.id)}>
+                                    <Text className={styles.studentName}>{s.name}</Text>
+                                    <Text className={styles.studentPhone}>{s.guardianPhone}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+                            {cls.followup > 0 && (
+                              <View className={styles.studentGroup}>
+                                <Text className={styles.studentGroupTitle}>需复诊（{cls.followup}人）</Text>
+                                {cls.students.filter(s => getStudentStatus(s) === 'followup').map(s => {
+                                  const fu = getFollowUpByStudent(s.id)
+                                  const fuStatus = fu?.status || 'pending'
+                                  return (
+                                    <View key={s.id} className={styles.studentRow} onClick={() => handleStudentClick(s.id)}>
+                                      <View style={{ display: 'flex', flexDirection: 'column', gap: '4rpx' }}>
+                                        <Text className={styles.studentName}>{s.name}</Text>
+                                        <Text className={styles.studentPhone}>{s.guardianPhone}</Text>
+                                      </View>
+                                      <View className={classnames(styles.followUpBadge, styles[fuStatus])}>
+                                        <Text>{FOLLOWUP_LABEL[fuStatus]}</Text>
+                                      </View>
+                                    </View>
+                                  )
+                                })}
+                              </View>
+                            )}
+                          </View>
+                        )}
                       </View>
                     )
                   })}
                 </View>
               </View>
-            )}
-          </>
+            ))}
+          </View>
         ) : (
           <View className={styles.section}>
             <View className={styles.reportContent}>
