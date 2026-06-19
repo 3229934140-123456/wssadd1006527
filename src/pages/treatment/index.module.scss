@@ -1,0 +1,387 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e6f4ff 0%, $color-bg-page 20%);
+  padding-bottom: $page-padding;
+}
+
+.studentSelector {
+  padding: $spacing-md $page-padding;
+  margin-bottom: $spacing-md;
+}
+
+.studentCard {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300rpx;
+    height: 300rpx;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+  }
+}
+
+.studentAvatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: $radius-round;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-md;
+  flex-shrink: 0;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.studentAvatarText {
+  font-size: 40rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+}
+
+.studentInfo {
+  flex: 1;
+  min-width: 0;
+  z-index: 1;
+}
+
+.studentNameRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.studentName {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+  margin-right: $spacing-sm;
+}
+
+.studentGender {
+  font-size: $font-size-sm;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2rpx 12rpx;
+  border-radius: $radius-xs;
+  color: $color-text-white;
+}
+
+.studentClass {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: $spacing-sm;
+}
+
+.progressBar {
+  height: 12rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-secondary 0%, $color-secondary-light 100%);
+  border-radius: $radius-round;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 8rpx;
+}
+
+.navArrow {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: $radius-round;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: $spacing-sm;
+  z-index: 1;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
+  }
+}
+
+.navArrowText {
+  font-size: 36rpx;
+  color: $color-text-white;
+  font-weight: $font-weight-bold;
+}
+
+.switchStudentBtn {
+  margin-top: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: $radius-button;
+  text-align: center;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+.switchStudentText {
+  font-size: $font-size-sm;
+  color: $color-text-white;
+}
+
+.chartSection {
+  padding: 0 $page-padding;
+}
+
+.summarySection {
+  padding: $spacing-md $page-padding;
+  margin-top: $spacing-md;
+}
+
+.summaryTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.recordList {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+}
+
+.recordItem {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.toothBadge {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-md;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+
+  &.suggest {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-status-suggest;
+    border: 2rpx solid $color-status-suggest;
+  }
+
+  &.done {
+    background: rgba(0, 180, 42, 0.1);
+    color: $color-status-done;
+    border: 2rpx solid $color-status-done;
+  }
+
+  &.delay {
+    background: rgba(134, 144, 156, 0.1);
+    color: $color-status-delay;
+    border: 2rpx solid $color-status-delay;
+  }
+}
+
+.recordInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.recordToothName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.recordDetail {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.recordStatus {
+  margin-left: $spacing-sm;
+}
+
+.emptyRecord {
+  padding: 80rpx $spacing-lg;
+  text-align: center;
+}
+
+.emptyRecordIcon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-sm;
+  opacity: 0.5;
+}
+
+.emptyRecordText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+/* 学生选择弹窗 */
+.studentListModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  z-index: 1000;
+}
+
+.studentListContent {
+  background: $color-bg-card;
+  border-radius: $radius-xl $radius-xl 0 0;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.studentListHeader {
+  padding: $spacing-lg;
+  border-bottom: 1rpx solid $color-divider;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.studentListTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.closeBtn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: $radius-round;
+  background: $color-bg-page;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.closeBtnText {
+  font-size: 32rpx;
+  color: $color-text-tertiary;
+}
+
+.studentListBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: $spacing-md;
+}
+
+.studentListItem {
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+  display: flex;
+  align-items: center;
+  border: 2rpx solid transparent;
+
+  &.active {
+    background: $color-bg-blue;
+    border-color: $color-primary;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.listItemAvatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: $radius-round;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-md;
+}
+
+.listItemAvatarText {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-white;
+}
+
+.listItemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.listItemName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.listItemClass {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.listItemStatus {
+  margin-left: $spacing-sm;
+}
+
+.statusDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: $radius-round;
+
+  &.completed {
+    background: $color-status-done;
+  }
+
+  &.pending {
+    background: $color-status-suggest;
+  }
+
+  &.empty {
+    background: $color-border;
+  }
+}

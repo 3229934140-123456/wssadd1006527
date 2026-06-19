@@ -1,0 +1,80 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    .title, .value, .subtitle {
+      color: $color-text-white;
+    }
+    .subtitle {
+      opacity: 0.8;
+    }
+  }
+
+  &.success {
+    background: linear-gradient(135deg, $color-success 0%, #23c343 100%);
+    .title, .value, .subtitle {
+      color: $color-text-white;
+    }
+    .subtitle {
+      opacity: 0.8;
+    }
+  }
+
+  &.warning {
+    background: linear-gradient(135deg, $color-warning 0%, #ff9a2e 100%);
+    .title, .value, .subtitle {
+      color: $color-text-white;
+    }
+    .subtitle {
+      opacity: 0.8;
+    }
+  }
+
+  &.default {
+    background: $color-bg-card;
+    .title {
+      color: $color-text-secondary;
+    }
+    .value {
+      color: $color-text-primary;
+    }
+    .subtitle {
+      color: $color-text-tertiary;
+    }
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-xs;
+}
+
+.value {
+  font-size: 56rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: $font-size-xs;
+  margin-top: $spacing-xs;
+}

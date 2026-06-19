@@ -1,0 +1,416 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+}
+
+.typeSwitch {
+  display: flex;
+  background: $color-bg-page;
+  border-radius: $radius-button;
+  padding: 6rpx;
+  margin-bottom: $spacing-lg;
+}
+
+.switchBtn {
+  flex: 1;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+
+  &.active {
+    background: $color-bg-card;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  }
+}
+
+.switchText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: $spacing-xl;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+}
+
+.legendDot {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: $radius-xs;
+  margin-right: $spacing-xs;
+}
+
+.legendText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.chart {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg $spacing-md;
+}
+
+.upperJaw,
+.lowerJaw {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.midLine {
+  text-align: center;
+  padding: $spacing-sm 0;
+}
+
+.midLineText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.quadrant {
+  flex: 1;
+  padding: 0 $spacing-xs;
+}
+
+.quadrantLabel {
+  display: block;
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+}
+
+.toothRow {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.toothWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toothBtn {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: $radius-md;
+  background: $color-bg-card;
+  border: 2rpx solid $color-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.92);
+  }
+
+  &.selected {
+    border-color: $color-primary;
+    border-width: 4rpx;
+  }
+
+  &.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  &.statusSuggest {
+    background: rgba(255, 125, 0, 0.12);
+    border-color: $color-status-suggest;
+  }
+
+  &.statusDone {
+    background: rgba(0, 180, 42, 0.12);
+    border-color: $color-status-done;
+  }
+
+  &.statusDelay {
+    background: rgba(134, 144, 156, 0.12);
+    border-color: $color-status-delay;
+  }
+}
+
+.toothNumber {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+
+  .statusSuggest & {
+    color: $color-status-suggest;
+  }
+
+  .statusDone & {
+    color: $color-status-done;
+  }
+
+  .statusDelay & {
+    color: $color-status-delay;
+  }
+}
+
+.quickActions {
+  display: flex;
+  gap: 4rpx;
+  margin-top: 6rpx;
+}
+
+.quickBtn {
+  width: 36rpx;
+  height: 32rpx;
+  border-radius: 6rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.quickSuggest {
+    background: rgba(255, 125, 0, 0.15);
+  }
+
+  &.quickDone {
+    background: rgba(0, 180, 42, 0.15);
+  }
+
+  &.quickDelay {
+    background: rgba(134, 144, 156, 0.15);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+.quickText {
+  font-size: 18rpx;
+  font-weight: $font-weight-medium;
+
+  .quickSuggest & {
+    color: $color-status-suggest;
+  }
+
+  .quickDone & {
+    color: $color-status-done;
+  }
+
+  .quickDelay & {
+    color: $color-status-delay;
+  }
+}
+
+.statusSuggest {
+  background: rgba(255, 125, 0, 0.12);
+  border-color: $color-status-suggest;
+}
+
+.statusDone {
+  background: rgba(0, 180, 42, 0.12);
+  border-color: $color-status-done;
+}
+
+.statusDelay {
+  background: rgba(134, 144, 156, 0.12);
+  border-color: $color-status-delay;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: $spacing-xl;
+}
+
+.modal {
+  width: 100%;
+  max-width: 686rpx;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  padding: $spacing-xl;
+  box-shadow: $shadow-popup;
+}
+
+.modalHeader {
+  text-align: center;
+  margin-bottom: $spacing-xl;
+}
+
+.modalTitle {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.modalSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.formGroup {
+  margin-bottom: $spacing-lg;
+}
+
+.label {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.input {
+  height: 88rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-lg;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.statusBtns {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.statusOption {
+  flex: 1;
+  height: 72rpx;
+  border-radius: $radius-md;
+  background: $color-bg-page;
+  border: 2rpx solid $color-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-base;
+
+  &.statusOptionActive {
+    border-width: 4rpx;
+  }
+
+  &.statusOptionSuggest {
+    background: rgba(255, 125, 0, 0.1);
+    border-color: $color-status-suggest;
+  }
+
+  &.statusOptionDone {
+    background: rgba(0, 180, 42, 0.1);
+    border-color: $color-status-done;
+  }
+
+  &.statusOptionDelay {
+    background: rgba(134, 144, 156, 0.1);
+    border-color: $color-status-delay;
+  }
+
+  &.cooperationActive {
+    background: rgba(22, 119, 255, 0.1);
+    border-color: $color-primary;
+    border-width: 4rpx;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.statusOptionText {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+
+  .statusOptionSuggest & {
+    color: $color-status-suggest;
+  }
+
+  .statusOptionDone & {
+    color: $color-status-done;
+  }
+
+  .statusOptionDelay & {
+    color: $color-status-delay;
+  }
+
+  .cooperationActive & {
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.modalActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+}
+
+.modalBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.btnCancel {
+  background: $color-bg-page;
+  color: $color-text-secondary;
+  border: 2rpx solid $color-border;
+}
+
+.btnConfirm {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.tip {
+  margin-top: $spacing-lg;
+  padding: $spacing-md;
+  background: $color-bg-blue;
+  border-radius: $radius-md;
+  text-align: center;
+}
+
+.tipText {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}

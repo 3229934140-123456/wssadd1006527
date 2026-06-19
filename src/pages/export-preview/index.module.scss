@@ -1,0 +1,436 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: $page-padding;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: $spacing-xl $page-padding;
+  color: $color-text-white;
+  margin-bottom: $spacing-md;
+}
+
+.title {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-xs;
+}
+
+.subtitle {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+  opacity: 0.85;
+}
+
+.section {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.sectionTitleIcon {
+  font-size: $font-size-xl;
+}
+
+.overviewCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.overviewRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.overviewItem {
+  text-align: center;
+  padding: $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+
+  &.primary {
+    background: rgba(22, 119, 255, 0.08);
+    .overviewValue, .overviewLabel {
+      color: $color-primary;
+    }
+  }
+
+  &.suggest {
+    background: rgba(255, 125, 0, 0.08);
+    .overviewValue, .overviewLabel {
+      color: $color-status-suggest;
+    }
+  }
+
+  &.done {
+    background: rgba(0, 180, 42, 0.08);
+    .overviewValue, .overviewLabel {
+      color: $color-status-done;
+    }
+  }
+
+  &.delay {
+    background: rgba(134, 144, 156, 0.08);
+    .overviewValue, .overviewLabel {
+      color: $color-status-delay;
+    }
+  }
+}
+
+.overviewValue {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1.2;
+  margin-bottom: 4rpx;
+}
+
+.overviewLabel {
+  font-size: $font-size-sm;
+}
+
+.schoolSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+}
+
+.schoolHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.schoolName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.schoolStats {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.classList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.classItem {
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.classHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.className {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.classProgress {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.progressBar {
+  height: 12rpx;
+  background: $color-border;
+  border-radius: $radius-round;
+  overflow: hidden;
+  margin-bottom: $spacing-sm;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}
+
+.classDetail {
+  display: flex;
+  gap: $spacing-md;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.detailItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.detailDot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: $radius-round;
+
+  &.suggest {
+    background: $color-status-suggest;
+  }
+
+  &.done {
+    background: $color-status-done;
+  }
+
+  &.delay {
+    background: $color-status-delay;
+  }
+}
+
+.followUpSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+}
+
+.followUpHeader {
+  padding: $spacing-lg;
+  border-bottom: 1rpx solid $color-divider;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.followUpTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.followUpCount {
+  font-size: $font-size-sm;
+  color: $color-status-suggest;
+  background: rgba(255, 125, 0, 0.1);
+  padding: 4rpx 16rpx;
+  border-radius: $radius-xs;
+}
+
+.followUpList {
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.followUpItem {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.followUpAvatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-round;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-md;
+  flex-shrink: 0;
+}
+
+.followUpAvatarText {
+  color: $color-text-white;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-md;
+}
+
+.followUpInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.followUpName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.followUpClass {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: 4rpx;
+}
+
+.followUpTeeth {
+  font-size: $font-size-xs;
+  color: $color-status-suggest;
+}
+
+.followUpPhone {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.followUpPhoneIcon {
+  margin-right: $spacing-xs;
+}
+
+.reportContent {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  font-family: 'Courier New', monospace;
+  font-size: $font-size-sm;
+  line-height: 1.8;
+  color: $color-text-primary;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 800rpx;
+  overflow-y: auto;
+}
+
+.reportSection {
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.reportTitle {
+  font-weight: $font-weight-bold;
+  font-size: $font-size-md;
+  margin-bottom: $spacing-sm;
+  color: $color-primary;
+}
+
+.reportLine {
+  padding: 4rpx 0;
+}
+
+.emptyState {
+  padding: 120rpx 0;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 120rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.actionBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: $spacing-md;
+  z-index: 100;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.copyBtn {
+  background: $color-bg-page;
+  color: $color-text-secondary;
+  border: 2rpx solid $color-border;
+}
+
+.shareBtn {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.btnIcon {
+  font-size: 32rpx;
+}
+
+.viewToggle {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.toggleBtn {
+  @include button-reset;
+  flex: 1;
+  height: 72rpx;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+}

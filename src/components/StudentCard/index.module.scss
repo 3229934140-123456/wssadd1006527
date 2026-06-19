@@ -1,0 +1,149 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  transition: all $transition-base;
+  border: 2rpx solid transparent;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: $shadow-card-hover;
+  }
+
+  &.selected {
+    border-color: $color-primary;
+    background: $color-bg-blue;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: $radius-round;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: $spacing-md;
+  flex-shrink: 0;
+}
+
+.avatarText {
+  color: $color-text-white;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4rpx;
+}
+
+.name {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-right: $spacing-sm;
+}
+
+.gender {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  background: rgba(22, 119, 255, 0.1);
+  padding: 2rpx 12rpx;
+  border-radius: $radius-xs;
+  margin-right: $spacing-sm;
+}
+
+.age {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.classInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  @include text-ellipsis;
+}
+
+.arrow {
+  margin-left: $spacing-sm;
+}
+
+.arrowText {
+  font-size: 48rpx;
+  color: $color-text-tertiary;
+  line-height: 1;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  padding: $spacing-sm 0;
+  margin-bottom: $spacing-sm;
+  border-top: 1rpx solid $color-divider;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+}
+
+.dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: $radius-round;
+  margin-right: 8rpx;
+
+  &.dotDone {
+    background: $color-status-done;
+  }
+
+  &.dotSuggest {
+    background: $color-status-suggest;
+  }
+
+  &.dotDelay {
+    background: $color-status-delay;
+  }
+}
+
+.statusText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: $spacing-sm;
+}
+
+.phone {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.time {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}

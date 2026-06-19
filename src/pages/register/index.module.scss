@@ -1,0 +1,352 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #e6f4ff 0%, $color-bg-page 30%);
+  padding-bottom: calc(200rpx + env(safe-area-inset-bottom));
+}
+
+.header {
+  padding: $spacing-lg $page-padding;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  margin-bottom: $spacing-md;
+}
+
+.headerTitle {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  margin-bottom: $spacing-xs;
+}
+
+.headerSubtitle {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.filterSection {
+  padding: 0 $page-padding;
+  margin-bottom: $spacing-md;
+}
+
+.filterRow {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.filterItem {
+  flex: 1;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.filterLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: 4rpx;
+}
+
+.filterValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  max-width: 200rpx;
+}
+
+.filterArrow {
+  font-size: 32rpx;
+  color: $color-text-tertiary;
+  margin-left: $spacing-sm;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  padding: 0 $spacing-lg;
+  height: 88rpx;
+  box-shadow: $shadow-card;
+}
+
+.searchIcon {
+  font-size: $font-size-lg;
+  color: $color-text-tertiary;
+  margin-right: $spacing-sm;
+}
+
+.searchInput {
+  flex: 1;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  background: transparent;
+}
+
+.listSection {
+  padding: 0 $page-padding;
+}
+
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.listTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.listCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  background: rgba(22, 119, 255, 0.1);
+  padding: 4rpx 16rpx;
+  border-radius: $radius-xs;
+  color: $color-primary;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+}
+
+.emptyIcon {
+  font-size: 120rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-xs;
+}
+
+.emptyHint {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: $spacing-md;
+  z-index: 100;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.scanBtn {
+  background: linear-gradient(135deg, $color-secondary 0%, $color-secondary-light 100%);
+  color: $color-text-white;
+}
+
+.manualBtn {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.btnIcon {
+  font-size: 36rpx;
+}
+
+.btnText {
+  font-size: $font-size-md;
+}
+
+/* 弹窗样式 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: $spacing-xl;
+}
+
+.modal {
+  width: 100%;
+  max-width: 686rpx;
+  background: $color-bg-card;
+  border-radius: $radius-xl;
+  overflow: hidden;
+}
+
+.modalHeader {
+  padding: $spacing-xl;
+  text-align: center;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.modalTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.modalBody {
+  padding: $spacing-xl;
+}
+
+.formGroup {
+  margin-bottom: $spacing-lg;
+}
+
+.formLabel {
+  display: block;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.formInput {
+  width: 100%;
+  height: 88rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-lg;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.genderRow {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.genderOption {
+  flex: 1;
+  height: 88rpx;
+  border-radius: $radius-md;
+  background: $color-bg-page;
+  border: 2rpx solid $color-border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  transition: all $transition-base;
+
+  &.active {
+    border-color: $color-primary;
+    background: rgba(22, 119, 255, 0.05);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.genderIcon {
+  font-size: $font-size-xl;
+}
+
+.genderText {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.modalActions {
+  display: flex;
+  gap: $spacing-md;
+  padding: 0 $spacing-xl $spacing-xl;
+}
+
+.modalBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.modalCancel {
+  background: $color-bg-page;
+  color: $color-text-secondary;
+  border: 2rpx solid $color-border;
+}
+
+.modalConfirm {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.pickerOption {
+  padding: $spacing-lg;
+  text-align: center;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  border-bottom: 1rpx solid $color-divider;
+
+  &.active {
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+    background: rgba(22, 119, 255, 0.05);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}

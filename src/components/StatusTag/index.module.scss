@@ -1,0 +1,33 @@
+@use '@/styles/variables.scss' as *;
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6rpx 20rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+  line-height: 1.4;
+
+  &.small {
+    padding: 4rpx 12rpx;
+    font-size: $font-size-xs;
+  }
+}
+
+.suggest {
+  background: rgba(255, 125, 0, 0.1);
+  color: $color-status-suggest;
+}
+
+.done {
+  background: rgba(0, 180, 42, 0.1);
+  color: $color-status-done;
+}
+
+.delay {
+  background: rgba(134, 144, 156, 0.1);
+  color: $color-status-delay;
+}
