@@ -63,12 +63,22 @@ const ExportPreviewPage: React.FC = () => {
     return result
   }, [students, filterSchool, filterClass])
 
+  const getStudentStatus = (student: Student): 'done' | 'followup' | 'unchecked' => {
+    const hasDone = student.toothRecords.some(r => r.status === 'done')
+    const hasSuggest = student.toothRecords.some(r => r.status === 'suggest')
+    const hasDelay = student.toothRecords.some(r => r.status === 'delay')
+
+    if (hasDone) return 'done'
+    if (hasSuggest || hasDelay) return 'followup'
+    return 'unchecked'
+  }
+
   const stats = useMemo(() => {
     const total = filteredStudents.length
-    const completed = filteredStudents.filter(s =>
-      s.toothRecords.some(r => r.status === 'done')
-    ).length
-    const pending = total - completed
+    const completed = filteredStudents.filter(s => getStudentStatus(s) === 'done').length
+    const followup = filteredStudents.filter(s => getStudentStatus(s) === 'followup').length
+    const unchecked = filteredStudents.filter(s => getStudentStatus(s) === 'unchecked').length
+    const pending = followup + unchecked
 
     let suggestCount = 0
     let doneCount = 0
@@ -81,7 +91,7 @@ const ExportPreviewPage: React.FC = () => {
       })
     })
 
-    return { total, completed, pending, suggestCount, doneCount, delayCount }
+    return { total, completed, followup, unchecked, pending, suggestCount, doneCount, delayCount }
   }, [filteredStudents])
 
   const schoolSummaries = useMemo((): SchoolSummary[] => {
@@ -106,12 +116,14 @@ const ExportPreviewPage: React.FC = () => {
       const classes: ClassSummary[] = []
       let schoolTotal = 0
       let schoolCompleted = 0
+      let schoolFollowup = 0
+      let schoolUnchecked = 0
 
       classMap.forEach((classStudents, className) => {
         const total = classStudents.length
-        const completed = classStudents.filter(s =>
-          s.toothRecords.some(r => r.status === 'done')
-        ).length
+        const completed = classStudents.filter(s => getStudentStatus(s) === 'done').length
+        const followup = classStudents.filter(s => getStudentStatus(s) === 'followup').length
+        const unchecked = classStudents.filter(s => getStudentStatus(s) === 'unchecked').length
         const pending = total - completed
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0
 
@@ -140,6 +152,8 @@ const ExportPreviewPage: React.FC = () => {
 
         schoolTotal += total
         schoolCompleted += completed
+        schoolFollowup += followup
+        schoolUnchecked += unchecked
       })
 
       classes.sort((a, b) => a.className.localeCompare(b.className))
@@ -196,7 +210,8 @@ const ExportPreviewPage: React.FC = () => {
     report += `=== 今日统计 ===\n`
     report += `筛查学生总数：${stats.total}人\n`
     report += `已完成封闭：${stats.completed}人\n`
-    report += `未完成：${stats.pending}人\n`
+    report += `需复诊（建议/暂缓）：${stats.followup}人\n`
+    report += `未检查：${stats.unchecked}人\n`
     report += `建议封闭牙位数：${stats.suggestCount}颗\n`
     report += `已封闭牙位数：${stats.doneCount}颗\n`
     report += `暂缓处理牙位数：${stats.delayCount}颗\n`
@@ -204,9 +219,13 @@ const ExportPreviewPage: React.FC = () => {
 
     report += `=== 各校/各班完成情况 ===\n`
     schoolSummaries.forEach(school => {
-      report += `【${school.schoolName}】 ${school.completed}/${school.total}人\n`
+      const schoolFollowup = school.classes.reduce((sum, cls) => sum + cls.students.filter(s => getStudentStatus(s) === 'followup').length, 0)
+      const schoolUnchecked = school.classes.reduce((sum, cls) => sum + cls.students.filter(s => getStudentStatus(s) === 'unchecked').length, 0)
+      report += `【${school.schoolName}】 已完成${school.completed}/${school.total}人（需复诊${schoolFollowup}人、未检查${schoolUnchecked}人\n`
       school.classes.forEach(cls => {
-        report += `  ${cls.className}：${cls.completed}/${cls.total}人（${cls.percent}%）\n`
+        const clsFollowup = cls.students.filter(s => getStudentStatus(s) === 'followup').length
+        const clsUnchecked = cls.students.filter(s => getStudentStatus(s) === 'unchecked').length
+        report += `  ${cls.className}：已完成${cls.completed}/${cls.total}人（${cls.percent}%），需复诊${clsFollowup}人、未检查${clsUnchecked}人\n`
         report += `    建议封闭${cls.suggestCount}颗、已封闭${cls.doneCount}颗、暂缓${cls.delayCount}颗\n`
       })
       report += `\n`
@@ -336,6 +355,14 @@ const ExportPreviewPage: React.FC = () => {
                   <View className={classnames(styles.overviewItem, styles.done)}>
                     <Text className={styles.overviewValue}>{stats.completed}</Text>
                     <Text className={styles.overviewLabel}>已完成</Text>
+                  </View>
+                  <View className={classnames(styles.overviewItem, styles.suggest)}>
+                    <Text className={styles.overviewValue}>{stats.followup}</Text>
+                    <Text className={styles.overviewLabel}>需复诊</Text>
+                  </View>
+                  <View className={classnames(styles.overviewItem, styles.delay)}>
+                    <Text className={styles.overviewValue}>{stats.unchecked}</Text>
+                    <Text className={styles.overviewLabel}>未检查</Text>
                   </View>
                 </View>
                 <View className={styles.overviewRow}>

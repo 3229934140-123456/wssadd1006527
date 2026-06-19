@@ -43,12 +43,22 @@ const SummaryPage: React.FC = () => {
     return result
   }, [students, currentSchool, currentClass])
 
+  const getStudentStatus = (student: Student): 'done' | 'followup' | 'unchecked' => {
+    const hasDone = student.toothRecords.some(r => r.status === 'done')
+    const hasSuggest = student.toothRecords.some(r => r.status === 'suggest')
+    const hasDelay = student.toothRecords.some(r => r.status === 'delay')
+
+    if (hasDone) return 'done'
+    if (hasSuggest || hasDelay) return 'followup'
+    return 'unchecked'
+  }
+
   const stats = useMemo(() => {
     const total = filteredStudents.length
-    const completed = filteredStudents.filter(s =>
-      s.toothRecords.some(r => r.status === 'done')
-    ).length
-    const pending = total - completed
+    const completed = filteredStudents.filter(s => getStudentStatus(s) === 'done').length
+    const followup = filteredStudents.filter(s => getStudentStatus(s) === 'followup').length
+    const unchecked = filteredStudents.filter(s => getStudentStatus(s) === 'unchecked').length
+    const pending = followup + unchecked
     const suggestCount = filteredStudents.reduce((sum, s) =>
       sum + s.toothRecords.filter(r => r.status === 'suggest').length, 0
     )
@@ -59,7 +69,7 @@ const SummaryPage: React.FC = () => {
       sum + s.toothRecords.filter(r => r.status === 'delay').length, 0
     )
 
-    return { total, completed, pending, suggestCount, doneCount, delayCount }
+    return { total, completed, followup, unchecked, pending, suggestCount, doneCount, delayCount }
   }, [filteredStudents])
 
   const classSummaries = useMemo(() => {
@@ -73,13 +83,15 @@ const SummaryPage: React.FC = () => {
 
     return Array.from(classMap.entries()).map(([className, students]) => {
       const total = students.length
-      const completed = students.filter(s =>
-        s.toothRecords.some(r => r.status === 'done')
-      ).length
+      const completed = students.filter(s => getStudentStatus(s) === 'done').length
+      const followup = students.filter(s => getStudentStatus(s) === 'followup').length
+      const unchecked = students.filter(s => getStudentStatus(s) === 'unchecked').length
       return {
         className,
         total,
         completed,
+        followup,
+        unchecked,
         percent: total > 0 ? Math.round((completed / total) * 100) : 0,
         students,
       }
@@ -146,16 +158,6 @@ const SummaryPage: React.FC = () => {
     setShowClassPicker(false)
   }
 
-  const getStudentStatusText = (student: Student) => {
-    const hasDone = student.toothRecords.some(r => r.status === 'done')
-    const hasSuggest = student.toothRecords.some(r => r.status === 'suggest')
-    const hasDelay = student.toothRecords.some(r => r.status === 'delay')
-
-    if (hasDone) return '已完成'
-    if (hasSuggest || hasDelay) return '需复诊'
-    return '未检查'
-  }
-
   return (
     <View className={styles.page}>
       <View className={styles.header}>
@@ -173,8 +175,12 @@ const SummaryPage: React.FC = () => {
           <Text className={styles.statLabel}>已完成</Text>
         </View>
         <View className={classnames(styles.statCard, styles.warning)} onClick={() => setActiveTab('followup')}>
-          <Text className={styles.statValue}>{stats.pending}</Text>
-          <Text className={styles.statLabel}>未完成</Text>
+          <Text className={styles.statValue}>{stats.followup}</Text>
+          <Text className={styles.statLabel}>需复诊</Text>
+        </View>
+        <View className={classnames(styles.statCard, styles.info)}>
+          <Text className={styles.statValue}>{stats.unchecked}</Text>
+          <Text className={styles.statLabel}>未检查</Text>
         </View>
         <View className={classnames(styles.statCard, styles.secondary)}>
           <Text className={styles.statValue}>{stats.suggestCount}</Text>
@@ -255,30 +261,42 @@ const SummaryPage: React.FC = () => {
                     </View>
                     {expandedClasses.includes(cls.className) && (
                       <View className={styles.studentList}>
-                        {cls.students.map(student => (
-                          <View
-                            key={student.id}
-                            className={styles.studentMiniItem}
-                            onClick={() => Taro.navigateTo({
-                              url: `/pages/student-detail/index?id=${student.id}`,
-                            })}
-                          >
-                            <View className={styles.studentMiniAvatar}>
-                              <Text className={styles.studentMiniAvatarText}>{student.name.charAt(0)}</Text>
+                        {cls.students.map(student => {
+                          const status = getStudentStatus(student)
+                          const statusText = status === 'done' ? '已完成' : status === 'followup' ? '需复诊' : '未检查'
+                          return (
+                            <View
+                              key={student.id}
+                              className={styles.studentMiniItem}
+                              onClick={() => Taro.navigateTo({
+                                url: `/pages/student-detail/index?id=${student.id}`,
+                              })}
+                            >
+                              <View className={styles.studentMiniAvatar}>
+                                <Text className={styles.studentMiniAvatarText}>{student.name.charAt(0)}</Text>
+                              </View>
+                              <View className={styles.studentMiniInfo}>
+                                <Text className={styles.studentMiniName}>{student.name}</Text>
+                                <Text className={styles.studentMiniDetail}>
+                                  {statusText}
+                                  {student.toothRecords.length > 0 && ` · ${student.toothRecords.length}颗牙`}
+                                </Text>
+                              </View>
+                              {status === 'done' ? (
+                                <StatusTag status="done" size="small" />
+                              ) : status === 'followup' ? (
+                                <StatusTag
+                                  status={student.toothRecords.find(r => r.status === 'suggest') ? 'suggest' : 'delay'}
+                                  size="small"
+                                />
+                              ) : (
+                                <View className={styles.uncheckedTag}>
+                                  <Text>未检查</Text>
+                                </View>
+                              )}
                             </View>
-                            <View className={styles.studentMiniInfo}>
-                              <Text className={styles.studentMiniName}>{student.name}</Text>
-                              <Text className={styles.studentMiniDetail}>
-                                {getStudentStatusText(student)} · {student.toothRecords.length}颗牙
-                              </Text>
-                            </View>
-                            <StatusTag
-                              status={student.toothRecords.find(r => r.status === 'done') ? 'done' :
-                                      student.toothRecords.find(r => r.status === 'suggest') ? 'suggest' : 'delay'}
-                              size="small"
-                            />
-                          </View>
-                        ))}
+                          )
+                        })}
                       </View>
                     )}
                   </View>

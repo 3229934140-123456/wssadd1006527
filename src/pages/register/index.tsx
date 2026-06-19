@@ -19,7 +19,11 @@ const RegisterPage: React.FC = () => {
     gender: 'male' as 'male' | 'female',
     guardianPhone: '',
     age: '',
+    school: '',
+    className: '',
   })
+  const [showFormSchoolPicker, setShowFormSchoolPicker] = useState(false)
+  const [showFormClassPicker, setShowFormClassPicker] = useState(false)
 
   useEffect(() => {
     refreshData()
@@ -61,6 +65,11 @@ const RegisterPage: React.FC = () => {
     const school = mockSchools.find(s => s.name === currentSchool)
     return school?.classes || []
   }, [currentSchool])
+
+  const formAvailableClasses = useMemo(() => {
+    const school = mockSchools.find(s => s.name === formData.school)
+    return school?.classes || []
+  }, [formData.school])
 
   const handleScan = async () => {
     try {
@@ -114,25 +123,25 @@ const RegisterPage: React.FC = () => {
       Taro.showToast({ title: '请输入监护人电话', icon: 'none' })
       return
     }
-    if (!currentSchool) {
-      Taro.showToast({ title: '请选择学校', icon: 'none' })
+    if (!formData.school.trim()) {
+      Taro.showToast({ title: '请输入或选择学校', icon: 'none' })
       return
     }
-    if (!currentClass) {
-      Taro.showToast({ title: '请选择班级', icon: 'none' })
+    if (!formData.className.trim()) {
+      Taro.showToast({ title: '请输入或选择班级', icon: 'none' })
       return
     }
 
     addStudent({
       name: formData.name.trim(),
-      className: currentClass,
-      school: currentSchool,
+      className: formData.className.trim(),
+      school: formData.school.trim(),
       guardianPhone: formData.guardianPhone.trim(),
       gender: formData.gender,
       age: formData.age ? parseInt(formData.age) : undefined,
     })
 
-    setFormData({ name: '', gender: 'male', guardianPhone: '', age: '' })
+    setFormData({ name: '', gender: 'male', guardianPhone: '', age: '', school: '', className: '' })
     setShowAddModal(false)
     Taro.showToast({ title: '添加成功', icon: 'success' })
   }
@@ -225,7 +234,14 @@ const RegisterPage: React.FC = () => {
           <Text className={styles.btnIcon}>📷</Text>
           <Text className={styles.btnText}>扫码建档</Text>
         </Button>
-        <Button className={classnames(styles.actionBtn, styles.manualBtn)} onClick={() => setShowAddModal(true)}>
+        <Button className={classnames(styles.actionBtn, styles.manualBtn)} onClick={() => {
+          setFormData(prev => ({
+            ...prev,
+            school: prev.school || currentSchool || '',
+            className: prev.className || currentClass || '',
+          }))
+          setShowAddModal(true)
+        }}>
           <Text className={styles.btnIcon}>✏️</Text>
           <Text className={styles.btnText}>手动录入</Text>
         </Button>
@@ -238,6 +254,46 @@ const RegisterPage: React.FC = () => {
               <Text className={styles.modalTitle}>手动录入学生信息</Text>
             </View>
             <View className={styles.modalBody}>
+              <View className={styles.formGroup}>
+                <Text className={styles.formLabel}>学校 *</Text>
+                <View className={styles.formInputWithAction}>
+                  <Input
+                    className={styles.formInput}
+                    placeholder="输入或点击右侧选择学校"
+                    value={formData.school}
+                    onInput={(e) => setFormData({ ...formData, school: e.detail.value })}
+                  />
+                  <View
+                    className={styles.formInputAction}
+                    onClick={() => setShowFormSchoolPicker(true)}
+                  >
+                    <Text>▾</Text>
+                  </View>
+                </View>
+              </View>
+              <View className={styles.formGroup}>
+                <Text className={styles.formLabel}>班级 *</Text>
+                <View className={styles.formInputWithAction}>
+                  <Input
+                    className={styles.formInput}
+                    placeholder="输入或点击右侧选择班级"
+                    value={formData.className}
+                    onInput={(e) => setFormData({ ...formData, className: e.detail.value })}
+                  />
+                  <View
+                    className={styles.formInputAction}
+                    onClick={() => {
+                      if (!formData.school.trim()) {
+                        Taro.showToast({ title: '请先输入学校', icon: 'none' })
+                        return
+                      }
+                      setShowFormClassPicker(true)
+                    }}
+                  >
+                    <Text>▾</Text>
+                  </View>
+                </View>
+              </View>
               <View className={styles.formGroup}>
                 <Text className={styles.formLabel}>学生姓名 *</Text>
                 <Input
@@ -294,6 +350,60 @@ const RegisterPage: React.FC = () => {
               <Button className={classnames(styles.modalBtn, styles.modalConfirm)} onClick={handleAddStudent}>
                 确认添加
               </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showFormSchoolPicker && (
+        <View className={styles.modalOverlay} onClick={() => setShowFormSchoolPicker(false)}>
+          <View className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>选择学校</Text>
+            </View>
+            <View className={styles.modalBody} style={{ maxHeight: '60vh', overflowY: 'auto', padding: 0 }}>
+              {mockSchools.map(school => (
+                <View
+                  key={school.id}
+                  className={classnames(styles.pickerOption, formData.school === school.name && styles.active)}
+                  onClick={() => {
+                    setFormData({ ...formData, school: school.name, className: '' })
+                    setShowFormSchoolPicker(false)
+                  }}
+                >
+                  <Text>{school.name}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showFormClassPicker && (
+        <View className={styles.modalOverlay} onClick={() => setShowFormClassPicker(false)}>
+          <View className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>选择班级</Text>
+            </View>
+            <View className={styles.modalBody} style={{ maxHeight: '60vh', overflowY: 'auto', padding: 0 }}>
+              {formAvailableClasses.length === 0 ? (
+                <View className={styles.pickerOption}>
+                  <Text>该学校暂无可选班级，请手动输入</Text>
+                </View>
+              ) : (
+                formAvailableClasses.map(cls => (
+                  <View
+                    key={cls}
+                    className={classnames(styles.pickerOption, formData.className === cls && styles.active)}
+                    onClick={() => {
+                      setFormData({ ...formData, className: cls })
+                      setShowFormClassPicker(false)
+                    }}
+                  >
+                    <Text>{cls}</Text>
+                  </View>
+                ))
+              )}
             </View>
           </View>
         </View>

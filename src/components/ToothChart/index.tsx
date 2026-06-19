@@ -109,8 +109,8 @@ const ToothChart: React.FC<ToothChartProps> = ({ records, onToothClick, disabled
     setSelectedTooth(null)
   }
 
-  const renderToothGrid = (teeth: typeof PERMANENT_TEETH, start: number, end: number, label: string) => {
-    const subset = teeth.slice(start, end)
+  const renderToothGrid = (teeth: typeof PERMANENT_TEETH, label: string, indices: number[]) => {
+    const subset = indices.map(i => teeth[i]).filter(Boolean)
     return (
       <View className={styles.quadrant}>
         <Text className={styles.quadrantLabel}>{label}</Text>
@@ -161,6 +161,24 @@ const ToothChart: React.FC<ToothChartProps> = ({ records, onToothClick, disabled
     )
   }
 
+  const getQuadrantIndices = () => {
+    if (toothType === 'permanent') {
+      return {
+        upperRight: [0, 1, 2, 3, 4, 5, 6, 7],
+        upperLeft: [8, 9, 10, 11, 12, 13, 14, 15],
+        lowerRight: [16, 17, 18, 19, 20, 21, 22, 23],
+        lowerLeft: [24, 25, 26, 27, 28, 29, 30, 31],
+      }
+    } else {
+      return {
+        upperRight: [0, 1, 2, 3, 4],
+        upperLeft: [5, 6, 7, 8, 9],
+        lowerRight: [10, 11, 12, 13, 14],
+        lowerLeft: [15, 16, 17, 18, 19],
+      }
+    }
+  }
+
   return (
     <View className={styles.container}>
       <View className={styles.typeSwitch}>
@@ -194,17 +212,24 @@ const ToothChart: React.FC<ToothChartProps> = ({ records, onToothClick, disabled
       </View>
 
       <View className={styles.chart}>
-        <View className={styles.upperJaw}>
-          {renderToothGrid(teethList, 0, 8, '右上')}
-          {renderToothGrid(teethList, 8, 16, '左上')}
-        </View>
-        <View className={styles.midLine}>
-          <Text className={styles.midLineText}>— 中线 —</Text>
-        </View>
-        <View className={styles.lowerJaw}>
-          {renderToothGrid(teethList, 24, 32, '右下')}
-          {renderToothGrid(teethList, 16, 24, '左下')}
-        </View>
+        {(() => {
+          const q = getQuadrantIndices()
+          return (
+            <>
+              <View className={styles.upperJaw}>
+                {renderToothGrid(teethList, '右上', q.upperRight)}
+                {renderToothGrid(teethList, '左上', q.upperLeft)}
+              </View>
+              <View className={styles.midLine}>
+                <Text className={styles.midLineText}>— 中线 —</Text>
+              </View>
+              <View className={styles.lowerJaw}>
+                {renderToothGrid(teethList, '右下', q.lowerRight)}
+                {renderToothGrid(teethList, '左下', q.lowerLeft)}
+              </View>
+            </>
+          )
+        })()}
       </View>
 
       {showDetail && selectedTooth && (

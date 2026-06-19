@@ -257,6 +257,33 @@
   box-sizing: border-box;
 }
 
+.formInputWithAction {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .formInput {
+    padding-right: 96rpx;
+  }
+}
+
+.formInputAction {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 88rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-lg;
+  color: $color-text-secondary;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
 .genderRow {
   display: flex;
   gap: $spacing-md;

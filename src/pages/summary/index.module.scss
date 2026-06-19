@@ -85,6 +85,13 @@
       color: $color-text-white;
     }
   }
+
+  &.info {
+    background: linear-gradient(135deg, #165dff 0%, #4080ff 100%);
+    .statValue, .statLabel {
+      color: $color-text-white;
+    }
+  }
 }
 
 .statValue {
@@ -324,6 +331,19 @@
   font-size: $font-size-xs;
   color: $color-text-tertiary;
   @include text-ellipsis;
+}
+
+.uncheckedTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40rpx;
+  padding: 0 16rpx;
+  border-radius: $radius-xs;
+  background: rgba(22, 93, 255, 0.08);
+  font-size: $font-size-xs;
+  color: #165dff;
+  flex-shrink: 0;
 }
 
 /* 复诊名单样式 */
