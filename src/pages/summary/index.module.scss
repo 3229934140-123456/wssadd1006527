@@ -230,6 +230,157 @@
   }
 }
 
+.followUpFilterBar {
+  display: flex;
+  gap: $spacing-sm;
+  padding: 0 $spacing-lg $spacing-md;
+  white-space: nowrap;
+}
+
+.followUpFilterBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  padding: 0 $spacing-lg;
+  border-radius: $radius-round;
+  background: $color-bg-page;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+
+  &.filterActive {
+    background: $color-primary;
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.followUpStatusRow {
+  margin-top: $spacing-sm;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.followUpBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36rpx;
+  padding: 0 16rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  background: $color-text-tertiary;
+  flex-shrink: 0;
+
+  &.pending {
+    background: #86909c;
+  }
+
+  &.notified {
+    background: #165dff;
+  }
+
+  &.appointed {
+    background: $color-status-done;
+  }
+
+  &.declined {
+    background: #f53f3f;
+  }
+
+  &.transferred {
+    background: #722ed1;
+  }
+}
+
+.followUpAppointment {
+  font-size: $font-size-xs;
+  color: $color-status-done;
+}
+
+.followUpRemark {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.followUpBtn {
+  width: 56rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 119, 255, 0.1);
+  border-radius: $radius-xs;
+
+  &:active {
+    background: rgba(22, 119, 255, 0.2);
+  }
+}
+
+.followUpBtnText {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.statusOptionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-sm;
+}
+
+.statusOption {
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  background: $color-bg-page;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &.statusOptionActive {
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+    border-color: transparent;
+  }
+
+  &.pending.statusOptionActive {
+    background: #86909c;
+  }
+
+  &.notified.statusOptionActive {
+    background: #165dff;
+  }
+
+  &.appointed.statusOptionActive {
+    background: $color-status-done;
+  }
+
+  &.declined.statusOptionActive {
+    background: #f53f3f;
+  }
+
+  &.transferred.statusOptionActive {
+    background: #722ed1;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
 .classHeader {
   display: flex;
   align-items: center;

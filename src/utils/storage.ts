@@ -1,9 +1,10 @@
 import Taro from '@tarojs/taro'
-import { Student, SchoolInfo } from '@/types'
+import { Student, SchoolInfo, FollowUpRecord } from '@/types'
 
 const STORAGE_KEYS = {
   STUDENTS: 'seal_students',
   SCHOOLS: 'seal_schools',
+  FOLLOWUPS: 'seal_followups',
   CURRENT_SCHOOL: 'seal_current_school',
   CURRENT_CLASS: 'seal_current_class',
 }
@@ -52,6 +53,62 @@ export const storage = {
     const students = this.getStudents().filter(s => s.id !== id)
     this.saveStudents(students)
     return students
+  },
+
+  getFollowUps(): FollowUpRecord[] {
+    try {
+      const data = Taro.getStorageSync(STORAGE_KEYS.FOLLOWUPS)
+      return data ? JSON.parse(data) : []
+    } catch (e) {
+      console.error('[Storage] getFollowUps error:', e)
+      return []
+    }
+  },
+
+  saveFollowUps(records: FollowUpRecord[]): void {
+    try {
+      Taro.setStorageSync(STORAGE_KEYS.FOLLOWUPS, JSON.stringify(records))
+      console.log('[Storage] saveFollowUps success, count:', records.length)
+    } catch (e) {
+      console.error('[Storage] saveFollowUps error:', e)
+    }
+  },
+
+  getFollowUpByStudent(studentId: string): FollowUpRecord | undefined {
+    const records = this.getFollowUps()
+    return records.find(r => r.studentId === studentId)
+  },
+
+  upsertFollowUp(studentId: string, data: Partial<FollowUpRecord>): FollowUpRecord[] {
+    const records = this.getFollowUps()
+    const now = new Date().toISOString()
+    const existingIndex = records.findIndex(r => r.studentId === studentId)
+
+    if (existingIndex > -1) {
+      records[existingIndex] = {
+        ...records[existingIndex],
+        ...data,
+        updatedAt: now,
+      }
+    } else {
+      records.unshift({
+        id: generateId(),
+        studentId,
+        status: 'notified',
+        ...data,
+        createdAt: now,
+        updatedAt: now,
+      } as FollowUpRecord)
+    }
+
+    this.saveFollowUps(records)
+    return records
+  },
+
+  deleteFollowUp(id: string): FollowUpRecord[] {
+    const records = this.getFollowUps().filter(r => r.id !== id)
+    this.saveFollowUps(records)
+    return records
   },
 
   getSchools(): SchoolInfo[] {

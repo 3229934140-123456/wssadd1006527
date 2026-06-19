@@ -2,6 +2,8 @@ export type TreatmentStatus = 'suggest' | 'done' | 'delay'
 
 export type CooperationLevel = 'good' | 'normal' | 'poor'
 
+export type FollowUpStatus = 'pending' | 'notified' | 'appointed' | 'declined' | 'transferred'
+
 export interface ToothRecord {
   toothId: string
   toothName: string
@@ -10,6 +12,16 @@ export interface ToothRecord {
   doctorSignature?: string
   cooperation?: CooperationLevel
   updateTime: string
+}
+
+export interface FollowUpRecord {
+  id: string
+  studentId: string
+  status: FollowUpStatus
+  remark?: string
+  appointmentTime?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Student {
@@ -135,4 +147,12 @@ export const COOPERATION_LABEL: Record<CooperationLevel, string> = {
   good: '配合良好',
   normal: '一般',
   poor: '配合较差',
+}
+
+export const FOLLOWUP_LABEL: Record<FollowUpStatus, string> = {
+  pending: '待通知',
+  notified: '已通知',
+  appointed: '已预约',
+  declined: '家长拒绝',
+  transferred: '已转诊',
 }

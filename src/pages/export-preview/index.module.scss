@@ -512,3 +512,157 @@
   font-size: $font-size-xs;
   color: $color-status-suggest;
 }
+
+.classStudentPhone {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.versionToggle {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xs;
+  box-shadow: $shadow-card;
+}
+
+.versionBtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.versionIcon {
+  font-size: 40rpx;
+}
+
+.versionText {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.followUpFilterBar {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.filterLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.followUpScroll {
+  white-space: nowrap;
+}
+
+.followUpBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  padding: 0 $spacing-lg;
+  margin-right: $spacing-sm;
+  border-radius: $radius-round;
+  background: $color-bg-page;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.followUpBadge {
+  display: inline-flex;
+  align-items: center;
+  height: 40rpx;
+  padding: 0 $spacing-sm;
+  border-radius: $radius-xs;
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+
+  &.pending {
+    background: rgba(134, 144, 156, 0.1);
+    color: $color-text-tertiary;
+  }
+
+  &.notified {
+    background: rgba(24, 144, 255, 0.1);
+    color: #1890ff;
+  }
+
+  &.appointed {
+    background: rgba(82, 196, 26, 0.1);
+    color: #52c41a;
+  }
+
+  &.declined {
+    background: rgba(255, 77, 79, 0.1);
+    color: #ff4d4f;
+  }
+
+  &.transferred {
+    background: rgba(250, 173, 20, 0.1);
+    color: #faad14;
+  }
+}
+
+.doctorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  &:first-child {
+    padding-top: 0;
+  }
+}
+
+.doctorName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.doctorStats {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+.doctorStat {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}

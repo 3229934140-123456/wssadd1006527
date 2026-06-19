@@ -1,18 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, Button, ScrollView } from '@tarojs/components'
+import { View, Text, Button, ScrollView, Input } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import classnames from 'classnames'
 import { useApp } from '@/store/AppContext'
 import StatusTag from '@/components/StatusTag'
-import { Student } from '@/types'
+import { Student, FollowUpStatus, FOLLOWUP_LABEL } from '@/types'
 import styles from './index.module.scss'
 
+type StudentStatus = 'done' | 'followup' | 'unchecked'
+type FollowUpFilter = FollowUpStatus | 'all'
+
 const SummaryPage: React.FC = () => {
-  const { students, schools, currentSchool, currentClass, setCurrentSchool, setCurrentClass, refreshData, loading } = useApp()
+  const { students, schools, currentSchool, currentClass, setCurrentSchool, setCurrentClass,
+    refreshData, loading, getFollowUpByStudent, upsertFollowUp } = useApp()
+
   const [activeTab, setActiveTab] = useState<'completion' | 'followup'>('completion')
   const [expandedClasses, setExpandedClasses] = useState<string[]>([])
   const [showSchoolPicker, setShowSchoolPicker] = useState(false)
   const [showClassPicker, setShowClassPicker] = useState(false)
+  const [followUpFilter, setFollowUpFilter] = useState<FollowUpFilter>('all')
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false)
+  const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [followUpForm, setFollowUpForm] = useState({
+    status: 'pending' as FollowUpStatus,
+    remark: '',
+    appointmentTime: '',
+  })
 
   useEffect(() => {
     refreshData()
@@ -31,24 +44,17 @@ const SummaryPage: React.FC = () => {
 
   const filteredStudents = useMemo(() => {
     let result = [...students]
-
-    if (currentSchool) {
-      result = result.filter(s => s.school === currentSchool)
-    }
-    if (currentClass) {
-      result = result.filter(s => s.className === currentClass)
-    }
-
+    if (currentSchool) result = result.filter(s => s.school === currentSchool)
+    if (currentClass) result = result.filter(s => s.className === currentClass)
     return result
   }, [students, currentSchool, currentClass])
 
-  const getStudentStatus = (student: Student): 'done' | 'followup' | 'unchecked' => {
-    const hasDone = student.toothRecords.some(r => r.status === 'done')
+  const getStudentStatus = (student: Student): StudentStatus => {
     const hasSuggest = student.toothRecords.some(r => r.status === 'suggest')
     const hasDelay = student.toothRecords.some(r => r.status === 'delay')
-
-    if (hasDone) return 'done'
+    const hasDone = student.toothRecords.some(r => r.status === 'done')
     if (hasSuggest || hasDelay) return 'followup'
+    if (hasDone) return 'done'
     return 'unchecked'
   }
 
@@ -57,7 +63,6 @@ const SummaryPage: React.FC = () => {
     const completed = filteredStudents.filter(s => getStudentStatus(s) === 'done').length
     const followup = filteredStudents.filter(s => getStudentStatus(s) === 'followup').length
     const unchecked = filteredStudents.filter(s => getStudentStatus(s) === 'unchecked').length
-    const pending = followup + unchecked
     const suggestCount = filteredStudents.reduce((sum, s) =>
       sum + s.toothRecords.filter(r => r.status === 'suggest').length, 0
     )
@@ -67,19 +72,15 @@ const SummaryPage: React.FC = () => {
     const delayCount = filteredStudents.reduce((sum, s) =>
       sum + s.toothRecords.filter(r => r.status === 'delay').length, 0
     )
-
-    return { total, completed, followup, unchecked, pending, suggestCount, doneCount, delayCount }
+    return { total, completed, followup, unchecked, suggestCount, doneCount, delayCount }
   }, [filteredStudents])
 
   const classSummaries = useMemo(() => {
     const classMap = new Map<string, Student[]>()
     filteredStudents.forEach(s => {
-      if (!classMap.has(s.className)) {
-        classMap.set(s.className, [])
-      }
+      if (!classMap.has(s.className)) classMap.set(s.className, [])
       classMap.get(s.className)!.push(s)
     })
-
     return Array.from(classMap.entries()).map(([className, students]) => {
       const total = students.length
       const completed = students.filter(s => getStudentStatus(s) === 'done').length
@@ -98,22 +99,22 @@ const SummaryPage: React.FC = () => {
   }, [filteredStudents])
 
   const followUpList = useMemo(() => {
-    return filteredStudents.filter(s =>
-      s.toothRecords.some(r => r.status === 'suggest' || r.status === 'delay')
-    ).map(student => {
-      const suggestTeeth = student.toothRecords
-        .filter(r => r.status === 'suggest')
-        .map(r => r.toothName)
-      const delayTeeth = student.toothRecords
-        .filter(r => r.status === 'delay')
-        .map(r => r.toothName)
-      return {
-        student,
-        suggestTeeth,
-        delayTeeth,
-      }
+    let list = filteredStudents.filter(s => getStudentStatus(s) === 'followup')
+
+    if (followUpFilter !== 'all') {
+      list = list.filter(s => {
+        const record = getFollowUpByStudent(s.id)
+        return record?.status === followUpFilter
+      })
+    }
+
+    return list.map(student => {
+      const suggestTeeth = student.toothRecords.filter(r => r.status === 'suggest').map(r => r.toothName)
+      const delayTeeth = student.toothRecords.filter(r => r.status === 'delay').map(r => r.toothName)
+      const followUp = getFollowUpByStudent(student.id)
+      return { student, suggestTeeth, delayTeeth, followUp }
     })
-  }, [filteredStudents])
+  }, [filteredStudents, followUpFilter, getFollowUpByStudent])
 
   const availableClasses = useMemo(() => {
     const school = schools.find(s => s.name === currentSchool)
@@ -127,9 +128,7 @@ const SummaryPage: React.FC = () => {
 
   const toggleClassExpand = (className: string) => {
     setExpandedClasses(prev =>
-      prev.includes(className)
-        ? prev.filter(c => c !== className)
-        : [...prev, className]
+      prev.includes(className) ? prev.filter(c => c !== className) : [...prev, className]
     )
   }
 
@@ -141,9 +140,9 @@ const SummaryPage: React.FC = () => {
     const params = new URLSearchParams()
     if (currentSchool) params.append('school', currentSchool)
     if (currentClass) params.append('class', currentClass)
+    if (followUpFilter !== 'all') params.append('followup', followUpFilter)
     const url = `/pages/export-preview/index${params.toString() ? `?${params.toString()}` : ''}`
     Taro.navigateTo({ url })
-    console.log('[Summary] Navigate to export preview')
   }
 
   const handleSchoolSelect = (school: string) => {
@@ -156,6 +155,47 @@ const SummaryPage: React.FC = () => {
     setCurrentClass(cls)
     setShowClassPicker(false)
   }
+
+  const openFollowUpModal = (studentId: string) => {
+    const record = getFollowUpByStudent(studentId)
+    setSelectedStudentId(studentId)
+    setFollowUpForm({
+      status: record?.status || 'pending',
+      remark: record?.remark || '',
+      appointmentTime: record?.appointmentTime || '',
+    })
+    setShowFollowUpModal(true)
+  }
+
+  const handleFollowUpSave = () => {
+    if (!selectedStudentId) return
+    upsertFollowUp(selectedStudentId, {
+      status: followUpForm.status,
+      remark: followUpForm.remark || undefined,
+      appointmentTime: followUpForm.appointmentTime || undefined,
+    })
+    setShowFollowUpModal(false)
+    Taro.showToast({ title: '已保存', icon: 'success' })
+  }
+
+  const getStudentStatusTag = (student: Student) => {
+    const status = getStudentStatus(student)
+    if (status === 'done') return <StatusTag status="done" size="small" />
+    if (status === 'followup') {
+      const hasSuggest = student.toothRecords.some(r => r.status === 'suggest')
+      return <StatusTag status={hasSuggest ? 'suggest' : 'delay'} size="small" />
+    }
+    return <View className={styles.uncheckedTag}><Text>未检查</Text></View>
+  }
+
+  const followUpFilterOptions: { value: FollowUpFilter; label: string }[] = [
+    { value: 'all', label: '全部' },
+    { value: 'pending', label: '待通知' },
+    { value: 'notified', label: '已通知' },
+    { value: 'appointed', label: '已预约' },
+    { value: 'declined', label: '已拒绝' },
+    { value: 'transferred', label: '已转诊' },
+  ]
 
   return (
     <View className={styles.page}>
@@ -234,7 +274,21 @@ const SummaryPage: React.FC = () => {
           </View>
         </View>
 
-        <ScrollView scrollY style={{ height: 'calc(100vh - 780rpx)' }}>
+        {activeTab === 'followup' && (
+          <ScrollView scrollX className={styles.followUpFilterBar}>
+            {followUpFilterOptions.map(opt => (
+              <View
+                key={opt.value}
+                className={classnames(styles.followUpFilterBtn, followUpFilter === opt.value && styles.filterActive)}
+                onClick={() => setFollowUpFilter(opt.value)}
+              >
+                <Text>{opt.label}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        <ScrollView scrollY style={{ height: activeTab === 'followup' ? 'calc(100vh - 860rpx)' : 'calc(100vh - 780rpx)' }}>
           {activeTab === 'completion' ? (
             <View className={styles.listSection}>
               {classSummaries.length === 0 ? (
@@ -281,18 +335,7 @@ const SummaryPage: React.FC = () => {
                                   {student.toothRecords.length > 0 && ` · ${student.toothRecords.length}颗牙`}
                                 </Text>
                               </View>
-                              {status === 'done' ? (
-                                <StatusTag status="done" size="small" />
-                              ) : status === 'followup' ? (
-                                <StatusTag
-                                  status={student.toothRecords.find(r => r.status === 'suggest') ? 'suggest' : 'delay'}
-                                  size="small"
-                                />
-                              ) : (
-                                <View className={styles.uncheckedTag}>
-                                  <Text>未检查</Text>
-                                </View>
-                              )}
+                              {getStudentStatusTag(student)}
                             </View>
                           )
                         })}
@@ -308,7 +351,6 @@ const SummaryPage: React.FC = () => {
                 <View className={styles.emptyState}>
                   <Text className={styles.emptyIcon}>✅</Text>
                   <Text className={styles.emptyText}>暂无需要复诊的学生</Text>
-                  <Text className={styles.emptyHint}>所有学生均已完成封闭</Text>
                 </View>
               ) : (
                 followUpList.map((item, index) => (
@@ -316,27 +358,51 @@ const SummaryPage: React.FC = () => {
                     <View className={styles.followUpAvatar}>
                       <Text className={styles.followUpAvatarText}>{index + 1}</Text>
                     </View>
-                    <View className={styles.followUpInfo}>
+                    <View
+                      className={styles.followUpInfo}
+                      onClick={() => Taro.navigateTo({ url: `/pages/student-detail/index?id=${item.student.id}` })}
+                    >
                       <View className={styles.followUpName}>
                         <Text>{item.student.name}</Text>
-                        {item.suggestTeeth.length > 0 && (
-                          <StatusTag status="suggest" size="small" />
-                        )}
-                        {item.delayTeeth.length > 0 && (
-                          <StatusTag status="delay" size="small" />
-                        )}
+                        {item.suggestTeeth.length > 0 && <StatusTag status="suggest" size="small" />}
+                        {item.delayTeeth.length > 0 && <StatusTag status="delay" size="small" />}
                       </View>
                       <Text className={styles.followUpClass}>{item.student.className}</Text>
                       <Text className={styles.followUpTeeth}>
                         {item.suggestTeeth.length > 0 && `建议封闭：${item.suggestTeeth.join('、')} `}
                         {item.delayTeeth.length > 0 && `暂缓处理：${item.delayTeeth.join('、')}`}
                       </Text>
+                      {item.followUp && (
+                        <View className={styles.followUpStatusRow}>
+                          <View className={classnames(styles.followUpBadge, styles[item.followUp.status])}>
+                            <Text>{FOLLOWUP_LABEL[item.followUp.status]}</Text>
+                          </View>
+                          {item.followUp.appointmentTime && (
+                            <Text className={styles.followUpAppointment}>
+                              预约：{item.followUp.appointmentTime}
+                            </Text>
+                          )}
+                          {item.followUp.remark && (
+                            <Text className={styles.followUpRemark}>
+                              备注：{item.followUp.remark}
+                            </Text>
+                          )}
+                        </View>
+                      )}
                     </View>
-                    <View
-                      className={styles.followUpPhone}
-                      onClick={() => handleCallPhone(item.student.guardianPhone)}
-                    >
-                      <Text className={styles.followUpPhoneText}>📞</Text>
+                    <View style={{ display: 'flex', flexDirection: 'column', gap: '8rpx', alignItems: 'flex-end' }}>
+                      <View
+                        className={styles.followUpPhone}
+                        onClick={() => handleCallPhone(item.student.guardianPhone)}
+                      >
+                        <Text className={styles.followUpPhoneText}>📞</Text>
+                      </View>
+                      <View
+                        className={styles.followUpBtn}
+                        onClick={(e) => { e.stopPropagation(); openFollowUpModal(item.student.id) }}
+                      >
+                        <Text className={styles.followUpBtnText}>回访</Text>
+                      </View>
                     </View>
                   </View>
                 ))
@@ -407,6 +473,58 @@ const SummaryPage: React.FC = () => {
                   </View>
                 ))
               )}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showFollowUpModal && (
+        <View className={styles.modalOverlay} onClick={() => setShowFollowUpModal(false)}>
+          <View className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>回访登记</Text>
+            </View>
+            <View className={styles.modalBody}>
+              <View className={styles.formGroup}>
+                <Text className={styles.formLabel}>回访状态</Text>
+                <View className={styles.statusOptionGrid}>
+                  {(['pending', 'notified', 'appointed', 'declined', 'transferred'] as FollowUpStatus[]).map(status => (
+                    <View
+                      key={status}
+                      className={classnames(styles.statusOption, followUpForm.status === status && styles.statusOptionActive, styles[status])}
+                      onClick={() => setFollowUpForm({ ...followUpForm, status })}
+                    >
+                      <Text>{FOLLOWUP_LABEL[status]}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              <View className={styles.formGroup}>
+                <Text className={styles.formLabel}>预约时间（选填）</Text>
+                <Input
+                  className={styles.formInput}
+                  placeholder="例：2026-06-25 上午"
+                  value={followUpForm.appointmentTime}
+                  onInput={(e) => setFollowUpForm({ ...followUpForm, appointmentTime: e.detail.value })}
+                />
+              </View>
+              <View className={styles.formGroup}>
+                <Text className={styles.formLabel}>备注（选填）</Text>
+                <Input
+                  className={styles.formInput}
+                  placeholder="记录沟通结果、家长意见等"
+                  value={followUpForm.remark}
+                  onInput={(e) => setFollowUpForm({ ...followUpForm, remark: e.detail.value })}
+                />
+              </View>
+            </View>
+            <View className={styles.modalActions}>
+              <Button className={classnames(styles.modalBtn, styles.modalCancel)} onClick={() => setShowFollowUpModal(false)}>
+                取消
+              </Button>
+              <Button className={classnames(styles.modalBtn, styles.modalConfirm)} onClick={handleFollowUpSave}>
+                保存
+              </Button>
             </View>
           </View>
         </View>

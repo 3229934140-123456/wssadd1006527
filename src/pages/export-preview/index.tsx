@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { View, Text, ScrollView, Button } from '@tarojs/components'
 import Taro, { useRouter, useDidShow } from '@tarojs/taro'
 import classnames from 'classnames'
 import { useApp } from '@/store/AppContext'
-import { Student, STATUS_LABEL, COOPERATION_LABEL } from '@/types'
+import { Student, STATUS_LABEL, COOPERATION_LABEL, FOLLOWUP_LABEL, FollowUpStatus } from '@/types'
 import styles from './index.module.scss'
+
+type ReportVersion = 'school' | 'internal'
+type StudentStatus = 'done' | 'followup' | 'unchecked'
 
 interface ClassSummary {
   className: string
@@ -30,14 +33,23 @@ interface SchoolSummary {
 
 const ExportPreviewPage: React.FC = () => {
   const router = useRouter()
-  const { students } = useApp()
+  const { students, getFollowUpByStudent } = useApp()
 
   const [viewMode, setViewMode] = useState<'visual' | 'text'>('visual')
-  const [reportContent, setReportContent] = useState('')
+  const [reportVersion, setReportVersion] = useState<ReportVersion>('school')
   const [doctorFilter, setDoctorFilter] = useState('')
+  const [followUpFilter, setFollowUpFilter] = useState<FollowUpStatus | 'all'>('all')
+  const [reportContent, setReportContent] = useState('')
 
   const filterSchool = router.params.school || ''
   const filterClass = router.params.class || ''
+  const paramFollowUp = router.params.followup || ''
+
+  useEffect(() => {
+    if (paramFollowUp) {
+      setFollowUpFilter(paramFollowUp as FollowUpStatus)
+    }
+  }, [paramFollowUp])
 
   useDidShow(() => {
     const report = generateExportReport()
@@ -49,26 +61,14 @@ const ExportPreviewPage: React.FC = () => {
     return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
   }, [])
 
-  const getStudentStatus = (student: Student): 'done' | 'followup' | 'unchecked' => {
-    const hasDone = student.toothRecords.some(r => r.status === 'done')
+  const getStudentStatus = (student: Student): StudentStatus => {
     const hasSuggest = student.toothRecords.some(r => r.status === 'suggest')
     const hasDelay = student.toothRecords.some(r => r.status === 'delay')
-    if (hasDone) return 'done'
+    const hasDone = student.toothRecords.some(r => r.status === 'done')
     if (hasSuggest || hasDelay) return 'followup'
+    if (hasDone) return 'done'
     return 'unchecked'
   }
-
-  const filteredStudents = useMemo(() => {
-    let result = [...students]
-    if (filterSchool) result = result.filter(s => s.school === filterSchool)
-    if (filterClass) result = result.filter(s => s.className === filterClass)
-    if (doctorFilter) {
-      result = result.filter(s =>
-        s.toothRecords.some(r => r.doctorSignature === doctorFilter)
-      )
-    }
-    return result
-  }, [students, filterSchool, filterClass, doctorFilter])
 
   const allDoctors = useMemo(() => {
     const doctors = new Set<string>()
@@ -79,6 +79,24 @@ const ExportPreviewPage: React.FC = () => {
     })
     return Array.from(doctors).sort()
   }, [students])
+
+  const filteredStudents = useMemo(() => {
+    let result = [...students]
+    if (filterSchool) result = result.filter(s => s.school === filterSchool)
+    if (filterClass) result = result.filter(s => s.className === filterClass)
+    if (doctorFilter) {
+      result = result.filter(s =>
+        s.toothRecords.some(r => r.doctorSignature === doctorFilter)
+      )
+    }
+    if (followUpFilter !== 'all') {
+      result = result.filter(s => {
+        const fu = getFollowUpByStudent(s.id)
+        return fu?.status === followUpFilter
+      })
+    }
+    return result
+  }, [students, filterSchool, filterClass, doctorFilter, followUpFilter, getFollowUpByStudent])
 
   const stats = useMemo(() => {
     const total = filteredStudents.length
@@ -161,37 +179,46 @@ const ExportPreviewPage: React.FC = () => {
   }
 
   const generateExportReport = (): string => {
-    let report = `【窝沟封闭筛查工作报告】\n`
+    const versionLabel = reportVersion === 'school' ? '学校负责人版' : '团队内部版'
+
+    let report = `【窝沟封闭筛查工作报告 - ${versionLabel}】\n`
     report += `生成时间：${todayDate}\n`
     if (filterSchool) report += `学校筛选：${filterSchool}\n`
     if (filterClass) report += `班级筛选：${filterClass}\n`
     if (doctorFilter) report += `医生筛选：${doctorFilter}\n`
+    if (followUpFilter !== 'all') report += `回访状态：${FOLLOWUP_LABEL[followUpFilter as FollowUpStatus]}\n`
     report += `\n`
+
     report += `=== 今日统计 ===\n`
     report += `筛查学生总数：${stats.total}人\n`
     report += `已完成封闭：${stats.completed}人\n`
     report += `需复诊（建议/暂缓）：${stats.followup}人\n`
     report += `未检查：${stats.unchecked}人\n`
-    report += `建议封闭牙位数：${stats.suggestCount}颗\n`
-    report += `已封闭牙位数：${stats.doneCount}颗\n`
-    report += `暂缓处理牙位数：${stats.delayCount}颗\n`
     report += `\n`
+
+    if (reportVersion === 'internal') {
+      report += `建议封闭牙位数：${stats.suggestCount}颗\n`
+      report += `已封闭牙位数：${stats.doneCount}颗\n`
+      report += `暂缓处理牙位数：${stats.delayCount}颗\n`
+      report += `\n`
+    }
 
     report += `=== 各校/各班完成情况 ===\n`
     schoolSummaries.forEach(school => {
       report += `【${school.schoolName}】 已完成${school.completed}/${school.total}人（需复诊${school.followup}人、未检查${school.unchecked}人）\n`
       school.classes.forEach(cls => {
         report += `  ${cls.className}：已完成${cls.completed}/${cls.total}人（${cls.percent}%），需复诊${cls.followup}人、未检查${cls.unchecked}人\n`
-        report += `    建议封闭${cls.suggestCount}颗、已封闭${cls.doneCount}颗、暂缓${cls.delayCount}颗\n`
       })
       report += `\n`
     })
 
     report += `=== 各班未检查名单 ===\n`
+    let hasUnchecked = false
     schoolSummaries.forEach(school => {
       school.classes.forEach(cls => {
         const uncheckedStudents = cls.students.filter(s => getStudentStatus(s) === 'unchecked')
         if (uncheckedStudents.length > 0) {
+          hasUnchecked = true
           report += `${school.schoolName} ${cls.className}（${uncheckedStudents.length}人）：\n`
           uncheckedStudents.forEach(s => {
             report += `  ${s.name}（家长电话：${s.guardianPhone}）\n`
@@ -199,57 +226,82 @@ const ExportPreviewPage: React.FC = () => {
         }
       })
     })
+    if (!hasUnchecked) report += `（全部已检查）\n`
     report += `\n`
 
     report += `=== 各班需复诊名单 ===\n`
+    let hasFollowup = false
     schoolSummaries.forEach(school => {
       school.classes.forEach(cls => {
         const followupStudents = cls.students.filter(s => getStudentStatus(s) === 'followup')
         if (followupStudents.length > 0) {
+          hasFollowup = true
           report += `${school.schoolName} ${cls.className}（${followupStudents.length}人）：\n`
           followupStudents.forEach(student => {
             const suggestTeeth = student.toothRecords.filter(r => r.status === 'suggest').map(r => r.toothName)
             const delayTeeth = student.toothRecords.filter(r => r.status === 'delay').map(r => r.toothName)
+            const fu = getFollowUpByStudent(student.id)
             report += `  ${student.name}（家长电话：${student.guardianPhone}）\n`
             if (suggestTeeth.length > 0) report += `    建议封闭：${suggestTeeth.join('、')}\n`
             if (delayTeeth.length > 0) report += `    暂缓处理：${delayTeeth.join('、')}\n`
+            if (fu) {
+              report += `    回访状态：${FOLLOWUP_LABEL[fu.status]}`
+              if (fu.appointmentTime) report += `，预约：${fu.appointmentTime}`
+              report += `\n`
+              if (fu.remark) report += `    备注：${fu.remark}\n`
+            } else {
+              report += `    回访状态：待通知\n`
+            }
           })
         }
       })
     })
+    if (!hasFollowup) report += `（无需复诊学生）\n`
     report += `\n`
 
-    if (allDoctors.length > 0) {
-      report += `=== 医生工作量统计 ===\n`
-      allDoctors.forEach(doctor => {
-        const doctorStudents = filteredStudents.filter(s =>
-          s.toothRecords.some(r => r.doctorSignature === doctor)
-        )
-        const doctorDoneCount = filteredStudents.reduce((sum, s) =>
-          sum + s.toothRecords.filter(r => r.doctorSignature === doctor && r.status === 'done').length, 0
-        )
-        report += `${doctor}：检查${doctorStudents.length}人，已封闭${doctorDoneCount}颗牙\n`
-      })
-      report += `\n`
-    }
+    if (reportVersion === 'internal') {
+      if (allDoctors.length > 0) {
+        report += `=== 医生工作量统计 ===\n`
+        const doctorScopeStudents = doctorFilter
+          ? filteredStudents
+          : students.filter(s => filterSchool ? s.school === filterSchool : true).filter(s => filterClass ? s.className === filterClass : true)
 
-    report += `=== 详细完成记录 ===\n`
-    filteredStudents.forEach(student => {
-      if (student.toothRecords.length > 0) {
-        report += `${student.name}（${student.school} ${student.className}）：\n`
-        student.toothRecords.forEach(record => {
-          report += `  ${record.toothName}牙位 - ${STATUS_LABEL[record.status]}`
-          if (record.materialBatch) report += `，材料：${record.materialBatch}`
-          if (record.doctorSignature) report += `，医生：${record.doctorSignature}`
-          if (record.cooperation) report += `，配合度：${COOPERATION_LABEL[record.cooperation]}`
-          report += `，时间：${formatDate(record.updateTime)}\n`
+        allDoctors.forEach(doctor => {
+          if (doctorFilter && doctor !== doctorFilter) return
+          const doctorStudents = doctorScopeStudents.filter(s =>
+            s.toothRecords.some(r => r.doctorSignature === doctor)
+          )
+          const doctorDoneCount = doctorScopeStudents.reduce((sum, s) =>
+            sum + s.toothRecords.filter(r => r.doctorSignature === doctor && r.status === 'done').length, 0
+          )
+          report += `${doctor}：检查${doctorStudents.length}人，已封闭${doctorDoneCount}颗牙\n`
         })
         report += `\n`
       }
-    })
+
+      report += `=== 详细牙位记录 ===\n`
+      filteredStudents.forEach(student => {
+        if (student.toothRecords.length > 0) {
+          report += `${student.name}（${student.school} ${student.className}）：\n`
+          student.toothRecords.forEach(record => {
+            report += `  ${record.toothName}牙位 - ${STATUS_LABEL[record.status]}`
+            if (record.materialBatch) report += `，材料：${record.materialBatch}`
+            if (record.doctorSignature) report += `，医生：${record.doctorSignature}`
+            if (record.cooperation) report += `，配合度：${COOPERATION_LABEL[record.cooperation]}`
+            report += `，时间：${formatDate(record.updateTime)}\n`
+          })
+          report += `\n`
+        }
+      })
+    }
 
     return report
   }
+
+  useEffect(() => {
+    const report = generateExportReport()
+    setReportContent(report)
+  }, [reportVersion, doctorFilter, followUpFilter])
 
   const handleCopy = async () => {
     try {
@@ -290,10 +342,30 @@ const ExportPreviewPage: React.FC = () => {
             {filterSchool && ` · ${filterSchool}`}
             {filterClass && ` · ${filterClass}`}
             {doctorFilter && ` · ${doctorFilter}医生`}
+            {followUpFilter !== 'all' && ` · ${FOLLOWUP_LABEL[followUpFilter as FollowUpStatus]}`}
           </Text>
         </View>
 
-        {allDoctors.length > 0 && (
+        <View className={styles.section}>
+          <View className={styles.versionToggle}>
+            <View
+              className={classnames(styles.versionBtn, reportVersion === 'school' && styles.active)}
+              onClick={() => setReportVersion('school')}
+            >
+              <Text className={styles.versionIcon}>🏫</Text>
+              <Text className={styles.versionText}>学校负责人版</Text>
+            </View>
+            <View
+              className={classnames(styles.versionBtn, reportVersion === 'internal' && styles.active)}
+              onClick={() => setReportVersion('internal')}
+            >
+              <Text className={styles.versionIcon}>📋</Text>
+              <Text className={styles.versionText}>团队内部版</Text>
+            </View>
+          </View>
+        </View>
+
+        {reportVersion === 'internal' && allDoctors.length > 0 && (
           <View className={styles.section}>
             <View className={styles.doctorFilter}>
               <Text className={styles.doctorFilterLabel}>医生筛选：</Text>
@@ -317,6 +389,23 @@ const ExportPreviewPage: React.FC = () => {
             </View>
           </View>
         )}
+
+        <View className={styles.section}>
+          <View className={styles.followUpFilterBar}>
+            <Text className={styles.filterLabel}>回访状态：</Text>
+            <ScrollView scrollX className={styles.followUpScroll}>
+              {(['all', 'pending', 'notified', 'appointed', 'declined', 'transferred'] as const).map(status => (
+                <View
+                  key={status}
+                  className={classnames(styles.followUpBtn, followUpFilter === status && styles.active)}
+                  onClick={() => setFollowUpFilter(status)}
+                >
+                  <Text>{status === 'all' ? '全部' : FOLLOWUP_LABEL[status]}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
 
         <View className={styles.section}>
           <View className={styles.viewToggle}>
@@ -361,20 +450,22 @@ const ExportPreviewPage: React.FC = () => {
                     <Text className={styles.overviewLabel}>未检查</Text>
                   </View>
                 </View>
-                <View className={styles.overviewRow}>
-                  <View className={classnames(styles.overviewItem, styles.suggest)}>
-                    <Text className={styles.overviewValue}>{stats.suggestCount}</Text>
-                    <Text className={styles.overviewLabel}>建议封闭(颗)</Text>
+                {reportVersion === 'internal' && (
+                  <View className={styles.overviewRow}>
+                    <View className={classnames(styles.overviewItem, styles.suggest)}>
+                      <Text className={styles.overviewValue}>{stats.suggestCount}</Text>
+                      <Text className={styles.overviewLabel}>建议封闭(颗)</Text>
+                    </View>
+                    <View className={classnames(styles.overviewItem, styles.done)}>
+                      <Text className={styles.overviewValue}>{stats.doneCount}</Text>
+                      <Text className={styles.overviewLabel}>已封闭(颗)</Text>
+                    </View>
+                    <View className={classnames(styles.overviewItem, styles.delay)}>
+                      <Text className={styles.overviewValue}>{stats.delayCount}</Text>
+                      <Text className={styles.overviewLabel}>暂缓处理(颗)</Text>
+                    </View>
                   </View>
-                  <View className={classnames(styles.overviewItem, styles.done)}>
-                    <Text className={styles.overviewValue}>{stats.doneCount}</Text>
-                    <Text className={styles.overviewLabel}>已封闭(颗)</Text>
-                  </View>
-                  <View className={classnames(styles.overviewItem, styles.delay)}>
-                    <Text className={styles.overviewValue}>{stats.delayCount}</Text>
-                    <Text className={styles.overviewLabel}>暂缓处理(颗)</Text>
-                  </View>
-                </View>
+                )}
               </View>
             </View>
 
@@ -414,32 +505,46 @@ const ExportPreviewPage: React.FC = () => {
                           </View>
                           <View className={styles.detailItem}>
                             <View className={classnames(styles.detailDot, styles.delay)} />
-                            <Text>暂缓{cls.delayCount}</Text>
+                            <Text>未检查{cls.unchecked}</Text>
                           </View>
                         </View>
 
-                        {cls.followup > 0 && (
+                        {cls.unchecked > 0 && (
                           <View className={styles.classStudentList}>
-                            <Text className={styles.classStudentListTitle}>需复诊：</Text>
-                            {cls.students.filter(s => getStudentStatus(s) === 'followup').map(s => (
+                            <Text className={styles.classStudentListTitle}>未检查（{cls.unchecked}人）：</Text>
+                            {cls.students.filter(s => getStudentStatus(s) === 'unchecked').map(s => (
                               <View key={s.id} className={styles.classStudentItem} onClick={() => handleStudentClick(s.id)}>
                                 <Text>{s.name}</Text>
-                                <Text className={styles.classStudentTeeth}>
-                                  {s.toothRecords.filter(r => r.status === 'suggest').map(r => r.toothName).join('、')}
-                                </Text>
+                                <Text className={styles.classStudentPhone}>{s.guardianPhone}</Text>
                               </View>
                             ))}
                           </View>
                         )}
 
-                        {cls.unchecked > 0 && (
+                        {cls.followup > 0 && (
                           <View className={styles.classStudentList}>
-                            <Text className={styles.classStudentListTitle}>未检查：</Text>
-                            {cls.students.filter(s => getStudentStatus(s) === 'unchecked').map(s => (
-                              <View key={s.id} className={styles.classStudentItem} onClick={() => handleStudentClick(s.id)}>
-                                <Text>{s.name}</Text>
-                              </View>
-                            ))}
+                            <Text className={styles.classStudentListTitle}>需复诊（{cls.followup}人）：</Text>
+                            {cls.students.filter(s => getStudentStatus(s) === 'followup').map(s => {
+                              const fu = getFollowUpByStudent(s.id)
+                              const suggestTeeth = s.toothRecords.filter(r => r.status === 'suggest').map(r => r.toothName)
+                              return (
+                                <View key={s.id} className={styles.classStudentItem} onClick={() => handleStudentClick(s.id)}>
+                                  <View style={{ display: 'flex', flexDirection: 'column', gap: '4rpx' }}>
+                                    <Text>{s.name}</Text>
+                                    {suggestTeeth.length > 0 && (
+                                      <Text className={styles.classStudentTeeth}>
+                                        建议：{suggestTeeth.join('、')}
+                                      </Text>
+                                    )}
+                                  </View>
+                                  {fu && (
+                                    <View className={classnames(styles.followUpBadge, styles[fu.status])}>
+                                      <Text>{FOLLOWUP_LABEL[fu.status]}</Text>
+                                    </View>
+                                  )}
+                                </View>
+                              )
+                            })}
                           </View>
                         )}
                       </View>
@@ -448,6 +553,39 @@ const ExportPreviewPage: React.FC = () => {
                 </View>
               ))}
             </View>
+
+            {reportVersion === 'internal' && allDoctors.length > 0 && (
+              <View className={styles.section}>
+                <View className={styles.sectionTitle}>
+                  <Text className={styles.sectionTitleIcon}>👨‍⚕️</Text>
+                  <Text>医生工作量</Text>
+                </View>
+                <View className={styles.overviewCard}>
+                  {allDoctors.map(doctor => {
+                    if (doctorFilter && doctor !== doctorFilter) return null
+                    const doctorStudents = filteredStudents.filter(s =>
+                      s.toothRecords.some(r => r.doctorSignature === doctor)
+                    )
+                    const doctorDoneCount = filteredStudents.reduce((sum, s) =>
+                      sum + s.toothRecords.filter(r => r.doctorSignature === doctor && r.status === 'done').length, 0
+                    )
+                    return (
+                      <View key={doctor} className={styles.doctorRow}>
+                        <Text className={styles.doctorName}>{doctor}</Text>
+                        <View className={styles.doctorStats}>
+                          <Text className={styles.doctorStat}>
+                            检查 {doctorStudents.length} 人
+                          </Text>
+                          <Text className={styles.doctorStat}>
+                            已封闭 {doctorDoneCount} 颗
+                          </Text>
+                        </View>
+                      </View>
+                    )
+                  })}
+                </View>
+              </View>
+            )}
           </>
         ) : (
           <View className={styles.section}>

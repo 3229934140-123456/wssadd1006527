@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { Student, ToothRecord, SchoolInfo, TreatmentStatus, PERMANENT_TEETH, PRIMARY_TEETH } from '@/types'
+import { Student, ToothRecord, SchoolInfo, TreatmentStatus, PERMANENT_TEETH, PRIMARY_TEETH, FollowUpRecord, FollowUpStatus } from '@/types'
 import { storage, generateId } from '@/utils/storage'
 
 interface AppContextType {
   students: Student[]
   schools: SchoolInfo[]
+  followUps: FollowUpRecord[]
   currentSchool: string
   currentClass: string
   loading: boolean
@@ -19,6 +20,8 @@ interface AppContextType {
   updateStudent: (student: Student) => void
   addSchool: (name: string, className?: string) => void
   addClassToSchool: (schoolName: string, className: string) => void
+  getFollowUpByStudent: (studentId: string) => FollowUpRecord | undefined
+  upsertFollowUp: (studentId: string, data: Partial<FollowUpRecord>) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -26,6 +29,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [students, setStudents] = useState<Student[]>([])
   const [schools, setSchools] = useState<SchoolInfo[]>([])
+  const [followUps, setFollowUps] = useState<FollowUpRecord[]>([])
   const [currentSchool, setCurrentSchoolState] = useState('')
   const [currentClass, setCurrentClassState] = useState('')
   const [loading, setLoading] = useState(true)
@@ -39,15 +43,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setLoading(true)
       const loadedStudents = storage.getStudents()
       const loadedSchools = storage.getSchools()
+      const loadedFollowUps = storage.getFollowUps()
       const savedSchool = storage.getCurrentSchool()
       const savedClass = storage.getCurrentClass()
 
       setStudents(loadedStudents)
       setSchools(loadedSchools)
+      setFollowUps(loadedFollowUps)
       setCurrentSchoolState(savedSchool)
       setCurrentClassState(savedClass)
 
-      console.log('[AppContext] Data loaded, students:', loadedStudents.length)
+      console.log('[AppContext] Data loaded, students:', loadedStudents.length, 'followUps:', loadedFollowUps.length)
     } catch (e) {
       console.error('[AppContext] loadData error:', e)
     } finally {
@@ -185,6 +191,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [schools])
 
+  const getFollowUpByStudent = useCallback((studentId: string): FollowUpRecord | undefined => {
+    return followUps.find(r => r.studentId === studentId)
+  }, [followUps])
+
+  const upsertFollowUp = useCallback((studentId: string, data: Partial<FollowUpRecord>) => {
+    const updated = storage.upsertFollowUp(studentId, data)
+    setFollowUps(updated)
+    console.log('[AppContext] FollowUp upserted for student:', studentId, data.status)
+  }, [])
+
   const batchUpdateToothRecords = useCallback((
     studentId: string,
     toothIds: string[],
@@ -234,6 +250,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         students,
         schools,
+        followUps,
         currentSchool,
         currentClass,
         loading,
@@ -248,6 +265,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateStudent,
         addSchool,
         addClassToSchool,
+        getFollowUpByStudent,
+        upsertFollowUp,
       }}
     >
       {children}
