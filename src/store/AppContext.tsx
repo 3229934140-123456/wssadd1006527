@@ -11,11 +11,14 @@ interface AppContextType {
   refreshData: () => void
   addStudent: (data: Omit<Student, 'id' | 'toothRecords' | 'createdAt' | 'updatedAt'>) => Student
   updateToothRecord: (studentId: string, toothId: string, status: TreatmentStatus, extra?: Partial<ToothRecord>) => void
+  batchUpdateToothRecords: (studentId: string, toothIds: string[], status: TreatmentStatus, extra?: Partial<ToothRecord>) => void
   setCurrentSchool: (school: string) => void
   setCurrentClass: (cls: string) => void
   getStudentById: (id: string) => Student | undefined
   deleteStudent: (id: string) => void
   updateStudent: (student: Student) => void
+  addSchool: (name: string, className?: string) => void
+  addClassToSchool: (schoolName: string, className: string) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -149,6 +152,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     console.log('[AppContext] Student deleted:', id)
   }, [])
 
+  const addSchool = useCallback((name: string, className?: string) => {
+    const existing = schools.find(s => s.name === name)
+    if (existing) {
+      if (className && !existing.classes.includes(className)) {
+        existing.classes.push(className)
+        const updated = [...schools]
+        storage.saveSchools(updated)
+        setSchools(updated)
+      }
+      return
+    }
+    const newSchool: SchoolInfo = {
+      id: generateId(),
+      name,
+      classes: className ? [className] : [],
+    }
+    const updated = [...schools, newSchool]
+    storage.saveSchools(updated)
+    setSchools(updated)
+    console.log('[AppContext] School added:', name)
+  }, [schools])
+
+  const addClassToSchool = useCallback((schoolName: string, className: string) => {
+    const school = schools.find(s => s.name === schoolName)
+    if (!school) return
+    if (!school.classes.includes(className)) {
+      school.classes.push(className)
+      const updated = [...schools]
+      storage.saveSchools(updated)
+      setSchools(updated)
+    }
+  }, [schools])
+
+  const batchUpdateToothRecords = useCallback((
+    studentId: string,
+    toothIds: string[],
+    status: TreatmentStatus,
+    extra?: Partial<ToothRecord>
+  ) => {
+    const student = students.find(s => s.id === studentId)
+    if (!student) return
+
+    const now = new Date().toISOString()
+    let newRecords = [...student.toothRecords]
+
+    toothIds.forEach(toothId => {
+      const existingIndex = newRecords.findIndex(r => r.toothId === toothId)
+      if (existingIndex > -1) {
+        newRecords[existingIndex] = {
+          ...newRecords[existingIndex],
+          status,
+          updateTime: now,
+          ...extra,
+        }
+      } else {
+        const toothInfo = getToothInfo(toothId)
+        newRecords.push({
+          toothId,
+          toothName: toothInfo?.name || toothId,
+          status,
+          updateTime: now,
+          ...extra,
+        })
+      }
+    })
+
+    const updatedStudent = {
+      ...student,
+      toothRecords: newRecords,
+      updatedAt: now,
+    }
+
+    const updated = storage.updateStudent(updatedStudent)
+    setStudents(updated)
+    console.log('[AppContext] Batch tooth records updated:', toothIds.length, 'teeth')
+  }, [students])
+
   return (
     <AppContext.Provider
       value={{
@@ -160,11 +240,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         refreshData,
         addStudent,
         updateToothRecord,
+        batchUpdateToothRecords,
         setCurrentSchool,
         setCurrentClass,
         getStudentById,
         deleteStudent,
         updateStudent,
+        addSchool,
+        addClassToSchool,
       }}
     >
       {children}

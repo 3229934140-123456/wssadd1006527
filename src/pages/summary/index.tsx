@@ -3,13 +3,12 @@ import { View, Text, Button, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import classnames from 'classnames'
 import { useApp } from '@/store/AppContext'
-import { mockSchools } from '@/data/mockData'
 import StatusTag from '@/components/StatusTag'
 import { Student } from '@/types'
 import styles from './index.module.scss'
 
 const SummaryPage: React.FC = () => {
-  const { students, currentSchool, currentClass, setCurrentSchool, setCurrentClass, refreshData, loading } = useApp()
+  const { students, schools, currentSchool, currentClass, setCurrentSchool, setCurrentClass, refreshData, loading } = useApp()
   const [activeTab, setActiveTab] = useState<'completion' | 'followup'>('completion')
   const [expandedClasses, setExpandedClasses] = useState<string[]>([])
   const [showSchoolPicker, setShowSchoolPicker] = useState(false)
@@ -117,9 +116,9 @@ const SummaryPage: React.FC = () => {
   }, [filteredStudents])
 
   const availableClasses = useMemo(() => {
-    const school = mockSchools.find(s => s.name === currentSchool)
+    const school = schools.find(s => s.name === currentSchool)
     return school?.classes || []
-  }, [currentSchool])
+  }, [schools, currentSchool])
 
   const todayDate = useMemo(() => {
     const now = new Date()
@@ -363,7 +362,7 @@ const SummaryPage: React.FC = () => {
               >
                 <Text>全部学校</Text>
               </View>
-              {mockSchools.map(school => (
+              {schools.map(school => (
                 <View
                   key={school.id}
                   className={classnames(styles.pickerOption, currentSchool === school.name && styles.active)}

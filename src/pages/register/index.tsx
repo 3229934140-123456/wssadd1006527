@@ -3,17 +3,18 @@ import { View, Text, Input, Button, ScrollView, Picker } from '@tarojs/component
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import classnames from 'classnames'
 import { useApp } from '@/store/AppContext'
-import { mockSchools } from '@/data/mockData'
 import StudentCard from '@/components/StudentCard'
 import { Student } from '@/types'
 import styles from './index.module.scss'
 
 const RegisterPage: React.FC = () => {
-  const { students, currentSchool, currentClass, setCurrentSchool, setCurrentClass, addStudent, refreshData, loading } = useApp()
+  const { students, schools, currentSchool, currentClass, setCurrentSchool, setCurrentClass, addStudent, addSchool, addClassToSchool, refreshData, loading } = useApp()
   const [searchKeyword, setSearchKeyword] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSchoolPicker, setShowSchoolPicker] = useState(false)
   const [showClassPicker, setShowClassPicker] = useState(false)
+  const [showCampsiteModal, setShowCampsiteModal] = useState(false)
+  const [campsiteForm, setCampsiteForm] = useState({ school: '', className: '' })
   const [formData, setFormData] = useState({
     name: '',
     gender: 'male' as 'male' | 'female',
@@ -62,14 +63,14 @@ const RegisterPage: React.FC = () => {
   }, [students, currentSchool, currentClass, searchKeyword])
 
   const availableClasses = useMemo(() => {
-    const school = mockSchools.find(s => s.name === currentSchool)
+    const school = schools.find(s => s.name === currentSchool)
     return school?.classes || []
-  }, [currentSchool])
+  }, [schools, currentSchool])
 
   const formAvailableClasses = useMemo(() => {
-    const school = mockSchools.find(s => s.name === formData.school)
+    const school = schools.find(s => s.name === formData.school)
     return school?.classes || []
-  }, [formData.school])
+  }, [schools, formData.school])
 
   const handleScan = async () => {
     try {
@@ -140,6 +141,8 @@ const RegisterPage: React.FC = () => {
       gender: formData.gender,
       age: formData.age ? parseInt(formData.age) : undefined,
     })
+
+    addSchool(formData.school.trim(), formData.className.trim())
 
     setFormData({ name: '', gender: 'male', guardianPhone: '', age: '', school: '', className: '' })
     setShowAddModal(false)
@@ -244,6 +247,10 @@ const RegisterPage: React.FC = () => {
         }}>
           <Text className={styles.btnIcon}>✏️</Text>
           <Text className={styles.btnText}>手动录入</Text>
+        </Button>
+        <Button className={classnames(styles.actionBtn, styles.campsiteBtn)} onClick={() => setShowCampsiteModal(true)}>
+          <Text className={styles.btnIcon}>🏕️</Text>
+          <Text className={styles.btnText}>义诊点</Text>
         </Button>
       </View>
 
@@ -362,7 +369,7 @@ const RegisterPage: React.FC = () => {
               <Text className={styles.modalTitle}>选择学校</Text>
             </View>
             <View className={styles.modalBody} style={{ maxHeight: '60vh', overflowY: 'auto', padding: 0 }}>
-              {mockSchools.map(school => (
+              {schools.map(school => (
                 <View
                   key={school.id}
                   className={classnames(styles.pickerOption, formData.school === school.name && styles.active)}
@@ -416,7 +423,7 @@ const RegisterPage: React.FC = () => {
               <Text className={styles.modalTitle}>选择学校</Text>
             </View>
             <View className={styles.modalBody} style={{ maxHeight: '60vh', overflowY: 'auto', padding: 0 }}>
-              {mockSchools.map(school => (
+              {schools.map(school => (
                 <View
                   key={school.id}
                   className={classnames(styles.pickerOption, currentSchool === school.name && styles.active)}
@@ -439,7 +446,7 @@ const RegisterPage: React.FC = () => {
             <View className={styles.modalBody} style={{ maxHeight: '60vh', overflowY: 'auto', padding: 0 }}>
               {availableClasses.length === 0 ? (
                 <View className={styles.pickerOption}>
-                  <Text className={styles.formLabel} style={{ color: '$color-text-tertiary' }}>请先选择学校</Text>
+                  <Text>请先选择学校</Text>
                 </View>
               ) : (
                 availableClasses.map(cls => (
@@ -452,6 +459,57 @@ const RegisterPage: React.FC = () => {
                   </View>
                 ))
               )}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showCampsiteModal && (
+        <View className={styles.modalOverlay} onClick={() => setShowCampsiteModal(false)}>
+          <View className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>🏕️ 义诊点模式</Text>
+            </View>
+            <View className={styles.modalBody}>
+              <View className={styles.formGroup}>
+                <Text className={styles.formLabel}>义诊点/临时学校名称 *</Text>
+                <Input
+                  className={styles.formInput}
+                  placeholder="例：社区义诊点A、XX幼儿园"
+                  value={campsiteForm.school}
+                  onInput={(e) => setCampsiteForm({ ...campsiteForm, school: e.detail.value })}
+                />
+              </View>
+              <View className={styles.formGroup}>
+                <Text className={styles.formLabel}>默认班级（选填）</Text>
+                <Input
+                  className={styles.formInput}
+                  placeholder="例：大班、中班、临时组"
+                  value={campsiteForm.className}
+                  onInput={(e) => setCampsiteForm({ ...campsiteForm, className: e.detail.value })}
+                />
+              </View>
+            </View>
+            <View className={styles.modalActions}>
+              <Button className={classnames(styles.modalBtn, styles.modalCancel)} onClick={() => setShowCampsiteModal(false)}>
+                取消
+              </Button>
+              <Button className={classnames(styles.modalBtn, styles.modalConfirm)} onClick={() => {
+                if (!campsiteForm.school.trim()) {
+                  Taro.showToast({ title: '请输入义诊点名称', icon: 'none' })
+                  return
+                }
+                addSchool(campsiteForm.school.trim(), campsiteForm.className.trim() || undefined)
+                setCurrentSchool(campsiteForm.school.trim())
+                if (campsiteForm.className.trim()) {
+                  setCurrentClass(campsiteForm.className.trim())
+                }
+                setCampsiteForm({ school: '', className: '' })
+                setShowCampsiteModal(false)
+                Taro.showToast({ title: '义诊点已创建', icon: 'success' })
+              }}>
+                创建并切换
+              </Button>
             </View>
           </View>
         </View>

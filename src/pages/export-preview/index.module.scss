@@ -434,3 +434,81 @@
     font-weight: $font-weight-semibold;
   }
 }
+
+.doctorFilter {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.doctorFilterLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.doctorFilterBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.doctorBtn {
+  height: 56rpx;
+  padding: 0 $spacing-lg;
+  border-radius: $radius-round;
+  background: $color-bg-page;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.doctorBtnActive {
+    background: rgba(22, 119, 255, 0.1);
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+    border: 2rpx solid $color-primary;
+  }
+}
+
+.classStudentList {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx dashed $color-divider;
+}
+
+.classStudentListTitle {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+  display: block;
+}
+
+.classStudentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-xs $spacing-sm;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  border-radius: $radius-xs;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+}
+
+.classStudentTeeth {
+  font-size: $font-size-xs;
+  color: $color-status-suggest;
+}

@@ -28,6 +28,11 @@
     background: $color-bg-card;
     box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
   }
+
+  &.batchActive {
+    background: rgba(255, 125, 0, 0.12);
+    box-shadow: 0 2rpx 8rpx rgba(255, 125, 0, 0.2);
+  }
 }
 
 .switchText {
@@ -38,6 +43,42 @@
   .active & {
     color: $color-primary;
     font-weight: $font-weight-semibold;
+  }
+
+  .batchActive & {
+    color: $color-status-suggest;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.batchBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $spacing-lg;
+  background: rgba(255, 125, 0, 0.08);
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+}
+
+.batchInfo {
+  font-size: $font-size-md;
+  color: $color-status-suggest;
+  font-weight: $font-weight-semibold;
+}
+
+.batchConfirmBtn {
+  @include button-reset;
+  height: 64rpx;
+  padding: 0 $spacing-xl;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-status-suggest 0%, #ff9a2e 100%);
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+
+  &:active {
+    transform: scale(0.96);
   }
 }
 
@@ -117,6 +158,7 @@
 }
 
 .toothBtn {
+  position: relative;
   width: 72rpx;
   height: 72rpx;
   border-radius: $radius-md;
@@ -133,6 +175,12 @@
 
   &.selected {
     border-color: $color-primary;
+    border-width: 4rpx;
+  }
+
+  &.batchSelected {
+    background: rgba(255, 125, 0, 0.2);
+    border-color: $color-status-suggest;
     border-width: 4rpx;
   }
 
@@ -173,6 +221,24 @@
   .statusDelay & {
     color: $color-status-delay;
   }
+
+  .batchSelected & {
+    color: $color-status-suggest;
+  }
+}
+
+.batchCheck {
+  position: absolute;
+  top: -4rpx;
+  right: -4rpx;
+  font-size: 16rpx;
+  color: $color-text-white;
+  background: $color-status-suggest;
+  border-radius: $radius-round;
+  width: 24rpx;
+  height: 24rpx;
+  line-height: 24rpx;
+  text-align: center;
 }
 
 .quickActions {

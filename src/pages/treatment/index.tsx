@@ -10,7 +10,7 @@ import { formatDate } from '@/utils/storage'
 import styles from './index.module.scss'
 
 const TreatmentPage: React.FC = () => {
-  const { students, currentSchool, currentClass, updateToothRecord, refreshData, loading } = useApp()
+  const { students, currentSchool, currentClass, updateToothRecord, batchUpdateToothRecords, refreshData, loading } = useApp()
   const [currentStudentIndex, setCurrentStudentIndex] = useState(0)
   const [showStudentList, setShowStudentList] = useState(false)
 
@@ -182,6 +182,9 @@ const TreatmentPage: React.FC = () => {
           <ToothChart
             records={currentStudent.toothRecords}
             onToothClick={handleToothClick}
+            onBatchUpdate={(toothIds, status, extra) =>
+              batchUpdateToothRecords(currentStudent.id, toothIds, status, extra)
+            }
           />
         )}
       </View>
